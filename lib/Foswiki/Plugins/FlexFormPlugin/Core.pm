@@ -66,6 +66,68 @@ sub getTopicObject {
 }
 
 ##############################################################################
+sub handleRENDERFORMDEF {
+  my ($session, $params, $theTopic, $theWeb) = @_;
+
+  my $formName = $params->{_DEFAULT} || $params->{form} || $theTopic;
+  my ($formWeb, $formTopic) = Foswiki::Func::normalizeWebTopicName($theWeb, $formName);
+
+  my $theFormat = $params->{format};
+  $theFormat = '$name' unless defined $theFormat;
+
+  my $theHeader = $params->{header} || '';
+  my $theFooter = $params->{footer} || '';
+  my $theSep = $params->{separator} || '';
+  my $theFields = $params->{field} || $params->{fields};
+  my $theExclude = $params->{exclude};
+  my $theInclude = $params->{include};
+
+  my $form = new Foswiki::Form($session, $formWeb, $formTopic);
+  return '' unless $form;
+
+  my @selectedFields = ();
+  if ($theFields) {
+    foreach my $fieldName (split(/\s*,\s*/, $theFields)) {
+      $fieldName =~ s/\s*$//;
+      $fieldName =~ s/^\s*//;
+      my $field = $form->getField($fieldName);
+      writeDebug("WARNING: no field for '$fieldName' in $formWeb.$formWeb") unless $field;
+      push @selectedFields, $field if $field;
+    }
+  } else {
+    @selectedFields = @{$form->getFields()};
+  }
+
+
+  my @result = ();
+  foreach my $field (@selectedFields) { 
+    next unless $field;
+    next if defined $theExclude && $field->{name} =~ /$theExclude/;
+    next if defined $theInclude && $field->{name} !~ /$theInclude/;
+
+    my $line = $theFormat;
+
+    $line =~ s/\$name/$field->{name}/g;
+    $line =~ s/\$title/$field->{title}/g;
+    $line =~ s/\$type/$field->{type}/g;
+    $line =~ s/\$size/$field->{size}/g;
+    $line =~ s/\$attributes/$field->{attributes}/g;
+    $line =~ s/\$(description|tooltip)/$field->{tooltip}/g;
+    $line =~ s/\$definingTopic/$field->{definingTopic}/g;
+    $line =~ s/\$value/$field->getDefaultValue/ge;
+
+    push @result, $line;
+  }
+
+  return '' unless @result;
+
+  my $result = $theHeader.join($theSep, @result).$theFooter;
+  $result =~ s/\$form/$formName/g;
+
+  return $result;
+}
+
+##############################################################################
 sub handleRENDERFORDISPLAY {
   my ($session, $params, $theTopic, $theWeb) = @_;
 
@@ -267,7 +329,7 @@ sub handleRENDERFORDISPLAY {
     } 
 
     next if $theHideEmpty && (!defined($fieldValue) || $fieldValue eq '');
-    $fieldValue = $fieldDefault unless defined $fieldValue;
+    $fieldValue = $fieldDefault unless defined $fieldValue && $fieldValue ne '';
     
     next if $theInclude && $fieldName !~ /$theInclude/;
     next if $theExclude && $fieldName =~ /$theExclude/;

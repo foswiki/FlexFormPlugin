@@ -18,8 +18,8 @@ package Foswiki::Plugins::FlexFormPlugin;
 use strict;
 use warnings;
 
-our $VERSION = '2.82';
-our $RELEASE = '2.82';
+our $VERSION = '3.00';
+our $RELEASE = '3.00';
 our $SHORTDESCRIPTION = 'Flexible way to render <nop>DataForms';
 our $NO_PREFS_IN_TOPIC = 1;
 our $doneInit;
@@ -38,6 +38,11 @@ sub initPlugin {
   Foswiki::Func::registerTagHandler('RENDERFORDISPLAY', sub {
     init();
     return Foswiki::Plugins::FlexFormPlugin::Core::handleRENDERFORDISPLAY(@_);
+  });
+
+  Foswiki::Func::registerTagHandler('RENDERFORMDEF', sub {
+    init();
+    return Foswiki::Plugins::FlexFormPlugin::Core::handleRENDERFORMDEF(@_);
   });
 
   $doneInit = 0;

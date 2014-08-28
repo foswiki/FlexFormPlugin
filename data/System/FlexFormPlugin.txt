@@ -4,10 +4,10 @@
 
 %TOC%
 
-This plugin leverages the internal capabilities to render an interface for %SYSTEMWEB%.DataForms.
-This API is part of the =Form= class of Foswiki and is called =renderForEdit()=. It takes
-a form definition and creates an appropriate edit interface for the given !DataFrom. This
-feature is actually very handy to write custom EDIT_TEMPLATEs and VIEW_TEMPLATEs in wiki applications.
+This plugin leverages the internal capabilities to render an interface for %SYSTEMWEB%.DataForms
+and adds insights to the acutal !DataForm definition itself as used internally.
+This API is part of the =Foswiki::Form= and =Foswiki:Form::FieldDefinition= classes of Foswiki
+now available when writing custom EDIT_TEMPLATEs and VIEW_TEMPLATEs in wiki applications.
 
 The %<nop>RENDEFFOREDIT and %<nop>RENDERFORDISPLAY macros allows wiki application authors
 to customize interfaces to !DataForms while not losing the flexibility of defining a !DataForm
@@ -21,6 +21,10 @@ to render the input form in a more dynamic way while still customizing the overa
 
 In addition, !FlexFormPlugin facilitates the extraction of field default values (such as valid schema options) from 
 !DataForm. See http://foswiki.org/Development/MacroForRetrievingFieldDefaultValues for background.
+
+While %<nop>RENDERFOREDIT% and %<nop>%RENDERFORDISPLAY render forms for the net data using a !DataForm
+the %<nop>RENDERFORMDEF= macro renders information about the !DataForm definition itself identpendent of
+any topic actually using it. This may be used to provide more defailed insights into the !DataForm definition.
 
 ---++ Usage
 ---+++ RENDERFOREDIT
@@ -92,7 +96,8 @@ In addition, !FlexFormPlugin facilitates the extraction of field default values 
 
 If all three =format=, =header= and =footer= are undefined a =foswikiFormSteps= block will be rendered as illustrated in the example below.
 
-The =format= parameter may contain the following pseudo-variables:
+The =format= parameter may contain the following variables:
+
    * =$attrs=: attribute string as given in the !DataForm definition
    * =$description=: formfield description in !DataForm 
    * =$edit=: the HTML form element as specified by the !DataForm definition, that is a input field, a textarea, a select box, whatever
@@ -108,6 +113,31 @@ The =format= parameter may contain the following pseudo-variables:
    * =$values=: list of all allowed values for the formfield as defined in the !DataForm definition
    * =$origvalues=: list of all allowed values; for =+value= formfields this is the original _unmapped_ value of the formfield
    * =$default=: this is the default value if no value is specified in the topic itself
+
+---+++ RENDERFORMDEF
+
+| *Parameter* | *Description* | *Default* |
+| "..." or form="..." | the topic holding the !DataForm definition | current topic |
+| field="..." or fields="..." | a comma separated list of fields to render information about | all fields |
+| include="..." | regular expression a field name must match to be listed | |
+| exclude="..." | regular expression a field name must not match to be listed | |
+| header | header string prepended to the result | |
+| format | format string for each field to be rendered in the result | |
+| separator | separator between lines when field information is rendered | |
+| footer | footer string appended to the result | |
+
+The =format= parameter may contain the following variables:
+
+   * =$name=: field name  
+   * =$title=: field title 
+   * =$type=: field type 
+   * =$size=: field size 
+   * =$attributes=: field attributes 
+   * =$description=: field description 
+   * =$definingTopic=: topic where allowed values are defined
+   * =$value=: default value of the field
+
+Note that the actual results may vary depending on the formfield type of the !DataForm.
 
 ---++ Examples
 
@@ -156,6 +186,7 @@ The =format= parameter may contain the following pseudo-variables:
 |  Release: | %$RELEASE% |
 |  Version: | %$VERSION% |
 |  Change History: | <!-- versions below in reverse order -->&nbsp; |
+|  28 Aug 2014: | added new feature %<nop>RENDERFORMDEF |
 |  03 Mar 2014: | work around different styles of inconsistencies in =renderForDisplay= across foswiki core releases |
 |  07 Nov 2013: | properly render =checkbox+buttons= formfields |
 |  13 Jul 2013: | added =revision= parameter to access non-top revisions; \
