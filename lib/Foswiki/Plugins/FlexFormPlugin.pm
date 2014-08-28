@@ -40,6 +40,11 @@ sub initPlugin {
     return Foswiki::Plugins::FlexFormPlugin::Core::handleRENDERFORDISPLAY(@_);
   });
 
+  Foswiki::Func::registerTagHandler('RENDERFORMDEF', sub {
+    init();
+    return Foswiki::Plugins::FlexFormPlugin::Core::handleRENDERFORMDEF(@_);
+  });
+
   $doneInit = 0;
   return 1;
 }
