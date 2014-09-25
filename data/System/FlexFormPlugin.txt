@@ -1,4 +1,4 @@
-%META:TOPICINFO{author="ProjectContributor" comment="autosave" date="1356278771" format="1.1" version="3"}%
+%META:TOPICINFO{author="ProjectContributor" comment="" date="1411636821" format="1.1" version="1"}%
 ---+!! %TOPIC%
 %$SHORTDESCRIPTION% 
 
@@ -186,6 +186,7 @@ Note that the actual results may vary depending on the formfield type of the !Da
 |  Release: | %$RELEASE% |
 |  Version: | %$VERSION% |
 |  Change History: | <!-- versions below in reverse order -->&nbsp; |
+|  29 Sep 2014: | improved cross-engine compatibility displaying formfield values |
 |  28 Aug 2014: | added new feature %<nop>RENDERFORMDEF |
 |  03 Mar 2014: | work around different styles of inconsistencies in =renderForDisplay= across foswiki core releases |
 |  07 Nov 2013: | properly render =checkbox+buttons= formfields |

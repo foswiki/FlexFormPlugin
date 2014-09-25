@@ -355,9 +355,7 @@ sub handleRENDERFORDISPLAY {
     # - patch in (display) value as $value
     # - use raw value as $origvalue
     my $origValue = $fieldValue;
-    if ($field->can('getDisplayValue')) { 
-      $fieldValue = $field->getDisplayValue($fieldValue);
-    }
+    $line =~ s/\$value([^\(]|$)/\$value(display)\0$1/g;
 
     # now dive into the core and see what we get out of it
     $line = $field->renderForDisplay($line, $fieldValue, {
@@ -365,6 +363,8 @@ sub handleRENDERFORDISPLAY {
       newline=>'$n', # keep newlines
       display=> 1,
     }); 
+
+    $line =~ s/(?:\(display\))?\0//g;
 
     # render left-overs by ourselfs
     $line =~ s/\$name\b/$fieldName/g;
