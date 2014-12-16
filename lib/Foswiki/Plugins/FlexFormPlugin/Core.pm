@@ -1,5 +1,5 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
-# 
+#
 # Copyright (C) 2009-2014 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
@@ -21,12 +21,13 @@ use warnings;
 use Foswiki::Func ();    # The plugins API
 use Foswiki::Form ();
 use Foswiki::Plugins ();
+use Error qw( :try );
 
 our $baseWeb;
 our $baseTopic;
 our %topicObjs;
 
-use constant TRACE => 0; # toggle me
+use constant TRACE => 0;    # toggle me
 
 ###############################################################################
 sub writeDebug {
@@ -52,11 +53,11 @@ sub getTopicObject {
   $web ||= '';
   $topic ||= '';
   $rev ||= '';
-  
+
   $web =~ s/\//\./go;
-  my $key = $web.'.'.$topic.'@'.$rev;
+  my $key = $web . '.' . $topic . '@' . $rev;
   my $topicObj = $topicObjs{$key};
-  
+
   unless ($topicObj) {
     ($topicObj, undef) = Foswiki::Func::readTopic($web, $topic, $rev);
     $topicObjs{$key} = $topicObj;
@@ -82,8 +83,13 @@ sub handleRENDERFORMDEF {
   my $theExclude = $params->{exclude};
   my $theInclude = $params->{include};
 
-  my $form = new Foswiki::Form($session, $formWeb, $formTopic);
-  return '' unless $form;
+  my $form;
+  try {
+    $form = new Foswiki::Form($session, $formWeb, $formTopic);
+  } catch Foswiki::OopsException with {
+    # nop
+  };
+  return "<div class='foswikiAlert'>ERROR: can't load form $formWeb.$formTopic</div>" unless $form;
 
   my @selectedFields = ();
   if ($theFields) {
@@ -98,14 +104,16 @@ sub handleRENDERFORMDEF {
     @selectedFields = @{$form->getFields()};
   }
 
-
   my @result = ();
-  foreach my $field (@selectedFields) { 
+  foreach my $field (@selectedFields) {
     next unless $field;
     next if defined $theExclude && $field->{name} =~ /$theExclude/;
     next if defined $theInclude && $field->{name} !~ /$theInclude/;
 
     my $line = $theFormat;
+
+    my $defaultValue = $field->getDefaultValue;
+    my $value = $field->{value} || $defaultValue;
 
     $line =~ s/\$name/$field->{name}/g;
     $line =~ s/\$title/$field->{title}/g;
@@ -113,15 +121,16 @@ sub handleRENDERFORMDEF {
     $line =~ s/\$size/$field->{size}/g;
     $line =~ s/\$attributes/$field->{attributes}/g;
     $line =~ s/\$(description|tooltip)/$field->{tooltip}/g;
-    $line =~ s/\$definingTopic/$field->{definingTopic}/g;
-    $line =~ s/\$value/$field->getDefaultValue/ge;
+    $line =~ s/\$(definingtopic|definingTopic)/$field->{definingTopic}/g;
+    $line =~ s/\$defaultvalue/$defaultValue/g;
+    $line =~ s/\$value/$value/g;
 
     push @result, $line;
   }
 
   return '' unless @result;
 
-  my $result = $theHeader.join($theSep, @result).$theFooter;
+  my $result = $theHeader . join($theSep, @result) . $theFooter;
   $result =~ s/\$form/$formName/g;
 
   return $result;
@@ -152,6 +161,8 @@ sub handleRENDERFORDISPLAY {
   my $theSort = Foswiki::Func::isTrue($params->{sort}, 0);
   my $theHideEmpty = Foswiki::Func::isTrue($params->{hideempty}, 0);
 
+  $theExcludeAttr = '\bh\b' unless defined $theExcludeAttr;
+
   # get defaults from template
   if (!defined($theFormat) && !defined($theHeader) && !defined($theFooter)) {
     my $templates = $session->templates;
@@ -177,7 +188,7 @@ sub handleRENDERFORDISPLAY {
 
   my $thisWeb = $theWeb;
   ($thisWeb, $thisTopic) = Foswiki::Func::normalizeWebTopicName($thisWeb, $thisTopic);
-  my $topicObj = getTopicObject($session, $thisWeb, $thisTopic, $thisRev); 
+  my $topicObj = getTopicObject($session, $thisWeb, $thisTopic, $thisRev);
 
   $theForm = $session->{request}->param('formtemplate') unless defined $theForm;
   $theForm = $topicObj->getFormName unless defined $theForm;
@@ -193,16 +204,21 @@ sub handleRENDERFORDISPLAY {
   }
   #writeDebug("theFormWeb=$theFormWeb");
 
-  my $form = new Foswiki::Form($session, $theFormWeb, $theForm);
-  return '' unless $form;
+  my $form;
+  try {
+    $form = new Foswiki::Form($session, $theFormWeb, $theForm);
+  } catch Foswiki::OopsException with {
+    # nop
+  };
+  return "<div class='foswikiAlert'>ERROR: can't load form $theFormWeb.$theForm</div>" unless $form;
 
   my $formTitle;
   if ($form->can('getPath')) {
     $formTitle = $form->getPath;
   } else {
-    $formTitle = $form->{web}.'.'.$form->{topic};
+    $formTitle = $form->{web} . '.' . $form->{topic};
   }
-  $formTitle =~ s/\//./g; # normalize web names
+  $formTitle =~ s/\//./g;    # normalize web names
 
   $theHeader =~ s/\$title/$formTitle/g;
   $theFooter =~ s/\$title/$formTitle/g;
@@ -230,14 +246,14 @@ sub handleRENDERFORDISPLAY {
   }
 
   my @result = ();
-  foreach my $field (@selectedFields) { 
+  foreach my $field (@selectedFields) {
     next unless $field;
 
     my $fieldName = $field->{name};
     my $fieldType = $field->{type};
     my $fieldSize = $field->{size};
     my $fieldAttrs = $field->{attributes};
-    my $fieldDescription = $field->{tooltip};
+    my $fieldDescription = $field->{tooltip} || $field->{description} || '';
     my $fieldTitle = $field->{title};
     my $fieldDefiningTopic = $field->{definingTopic};
 
@@ -281,67 +297,69 @@ sub handleRENDERFORDISPLAY {
     my $fieldDefault = '';
     if ($field->can('getDefaultValue')) {
       $fieldDefault = $field->getDefaultValue() || '';
-    } 
+    }
 
     my $metaField = $topicObj->get('FIELD', $fieldName);
     unless ($metaField) {
       # Not a valid field name, maybe it's a title.
       $fieldName = Foswiki::Form::fieldTitle2FieldName($fieldName);
-      $metaField = $topicObj->get('FIELD', $fieldName );
+      $metaField = $topicObj->get('FIELD', $fieldName);
     }
-    my $fieldValue = $metaField?$metaField->{value}:undef;
+    my $fieldValue = $metaField ? $metaField->{value} : undef;
 
-    $fieldSize = $params->{$fieldName.'_size'} if defined $params->{$fieldName.'_size'};
-    $fieldAttrs = $params->{$fieldName.'_attributes'} if defined $params->{$fieldName.'_attributes'};
-    $fieldDescription = $params->{$fieldName.'_tooltip'} if defined $params->{$fieldName.'_tooltip'};
-    $fieldDescription = $params->{$fieldName.'_description'} if defined $params->{$fieldName.'_description'};
-    $fieldTitle = $params->{$fieldName.'_title'} if defined $params->{$fieldName.'_title'}; # see also map
-    $fieldAllowedValues = $params->{$fieldName.'_values'} if defined $params->{$fieldName.'_values'};
-    $fieldDefault = $params->{$fieldName.'_default'} if defined $params->{$fieldName.'_default'};
-    $fieldType = $params->{$fieldName.'_type'} if defined $params->{$fieldName.'_type'};
-    $fieldValue = $params->{$fieldName.'_value'} if defined $params->{$fieldName.'_value'};
+    $fieldSize = $params->{$fieldName . '_size'} if defined $params->{$fieldName . '_size'};
+    $fieldAttrs = $params->{$fieldName . '_attributes'} if defined $params->{$fieldName . '_attributes'};
+    $fieldDescription = $params->{$fieldName . '_tooltip'} if defined $params->{$fieldName . '_tooltip'};
+    $fieldDescription = $params->{$fieldName . '_description'} if defined $params->{$fieldName . '_description'};
+    $fieldTitle = $params->{$fieldName . '_title'} if defined $params->{$fieldName . '_title'};    # see also map
+    $fieldAllowedValues = $params->{$fieldName . '_values'} if defined $params->{$fieldName . '_values'};
+    $fieldDefault = $params->{$fieldName . '_default'} if defined $params->{$fieldName . '_default'};
+    $fieldType = $params->{$fieldName . '_type'} if defined $params->{$fieldName . '_type'};
+    $fieldValue = $params->{$fieldName . '_value'} if defined $params->{$fieldName . '_value'};
 
-    my $fieldAutolink = Foswiki::Func::isTrue($params->{$fieldName.'_autolink'}, $theAutolink);
+    my $fieldAutolink = Foswiki::Func::isTrue($params->{$fieldName . '_autolink'}, $theAutolink);
 
-    my $fieldSort = Foswiki::Func::isTrue($params->{$fieldName.'_sort'}, $theSort);
+    my $fieldSort = Foswiki::Func::isTrue($params->{$fieldName . '_sort'}, $theSort);
     $fieldAllowedValues = sortValues($fieldAllowedValues, $fieldSort) if $fieldSort;
 
-    my $fieldFormat = $params->{$fieldName.'_format'} || $theFormat;
+    my $fieldFormat = $params->{$fieldName . '_format'} || $theFormat;
 
     # temporarily remap field to another type
     my $fieldClone;
-    if (defined($params->{$fieldName.'_type'}) || 
-	defined($params->{$fieldName.'_size'}) ||
-        $fieldSort) {
+    if ( defined($params->{$fieldName . '_type'})
+      || defined($params->{$fieldName . '_size'})
+      || $fieldSort)
+    {
       $fieldClone = $form->createField(
-	$fieldType,
-	name          => $fieldName,
-	title         => $fieldTitle,
-	size          => $fieldSize,
-	value         => $fieldAllowedValues,
-	tooltip       => $fieldDescription,
-	attributes    => $fieldAttrs,
-	definingTopic => $fieldDefiningTopic,
-	web           => $topicObj->web,
-	topic         => $topicObj->topic,
+        $fieldType,
+        name => $fieldName,
+        title => $fieldTitle,
+        size => $fieldSize,
+        value => $fieldAllowedValues,
+        description => $fieldDescription,
+        tooltip => $fieldDescription,
+        attributes => $fieldAttrs,
+        definingTopic => $fieldDefiningTopic,
+        web => $topicObj->web,
+        topic => $topicObj->topic,
       );
       $field = $fieldClone;
-    } 
+    }
 
     next if $theHideEmpty && (!defined($fieldValue) || $fieldValue eq '');
     $fieldValue = $fieldDefault unless defined $fieldValue && $fieldValue ne '';
-    
+
     next if $theInclude && $fieldName !~ /$theInclude/;
     next if $theExclude && $fieldName =~ /$theExclude/;
     next if $theIncludeAttr && $fieldAttrs !~ /$theIncludeAttr/;
     next if $theExcludeAttr && $fieldAttrs =~ /$theExcludeAttr/;
 
     my $line = $fieldFormat;
-    unless ($fieldName) { # label
+    unless ($fieldName) {    # label
       next unless $theLabelFormat;
       $line = $theLabelFormat;
     }
-    $line = '<noautolink>'.$line.'</noautolink>' unless $fieldAutolink;
+    $line = '<noautolink>' . $line . '</noautolink>' unless $fieldAutolink;
 
     $fieldTitle = $fieldTitles->{$fieldName} if $fieldTitles && $fieldTitles->{$fieldName};
 
@@ -358,11 +376,15 @@ sub handleRENDERFORDISPLAY {
     $line =~ s/\$value([^\(]|$)/\$value(display)\0$1/g;
 
     # now dive into the core and see what we get out of it
-    $line = $field->renderForDisplay($line, $fieldValue, {
-      bar=>'|', #  keep bars
-      newline=>'$n', # keep newlines
-      display=> 1,
-    }); 
+    $line = $field->renderForDisplay(
+      $line,
+      $fieldValue,
+      {
+        bar => '|',    #  keep bars
+        newline => '$n',    # keep newlines
+        display => 1,
+      }
+    );
 
     $line =~ s/(?:\(display\))?\0//g;
 
@@ -386,7 +408,7 @@ sub handleRENDERFORDISPLAY {
 
   return '' if $theHideEmpty && !@result;
 
-  my $result = $theHeader.join($theSep, @result).$theFooter;
+  my $result = $theHeader . join($theSep, @result) . $theFooter;
   $result =~ s/\$nop//g;
   $result =~ s/\$n/\n/g;
   $result =~ s/\$perce?nt/%/g;
@@ -438,11 +460,11 @@ sub handleRENDERFOREDIT {
   }
   $theMandatory = " <span class='foswikiAlert'>**</span> " unless defined $theMandatory;
   $theHiddenFormat = '$edit' unless defined $theHiddenFormat;
-  
+
   my $thisWeb = $theWeb;
 
   ($thisWeb, $thisTopic) = Foswiki::Func::normalizeWebTopicName($thisWeb, $thisTopic);
-  my $topicObj = getTopicObject($session, $thisWeb, $thisTopic, $thisRev); 
+  my $topicObj = getTopicObject($session, $thisWeb, $thisTopic, $thisRev);
 
   # give beforeEditHandlers a chance
   # SMELL: watch out for the fix of Item1965; it must be applied here as well; for now
@@ -458,15 +480,19 @@ sub handleRENDERFOREDIT {
   my $theFormWeb = $thisWeb;
   ($theFormWeb, $theForm) = Foswiki::Func::normalizeWebTopicName($theFormWeb, $theForm);
 
-  #writeDebug("theForm=$theForm"); 
+  #writeDebug("theForm=$theForm");
 
   if (!Foswiki::Func::topicExists($theFormWeb, $theForm)) {
     return '';
   }
 
-  my $form = new Foswiki::Form($session, $theFormWeb, $theForm);
-  return '' unless $form;
-  #writeDebug("form=$form");
+  my $form;
+  try {
+    $form = new Foswiki::Form($session, $theFormWeb, $theForm);
+  } catch Foswiki::OopsException with {
+    # nop
+  };
+  return "<div class='foswikiAlert'>ERROR: can't load form $theFormWeb.$theForm</div>" unless $form;
 
   my $fieldTitles;
   foreach my $map (split(/\s*,\s*/, $theMap)) {
@@ -503,13 +529,13 @@ sub handleRENDERFOREDIT {
     my $fieldName = $field->{name};
     my $origFieldName = $field->{name};
     if (defined $thePrefix) {
-      $field->{name} = $thePrefix.$fieldName;
+      $field->{name} = $thePrefix . $fieldName;
     }
 
     my $fieldType = $field->{type};
     my $fieldSize = $field->{size};
     my $fieldAttrs = $field->{attributes};
-    my $fieldDescription = $field->{tooltip};
+    my $fieldDescription = $field->{tooltip} || $field->{description} || '';
     my $fieldTitle = $field->{title};
     my $fieldDefiningTopic = $field->{definingTopic};
 
@@ -556,43 +582,44 @@ sub handleRENDERFOREDIT {
     my $fieldDefault = '';
     if ($field->can('getDefaultValue')) {
       $fieldDefault = $field->getDefaultValue() || '';
-    } 
+    }
 
-    $fieldSize = $params->{$fieldName.'_size'} if defined $params->{$fieldName.'_size'};
-    $fieldAttrs = $params->{$fieldName.'_attributes'} if defined $params->{$fieldName.'_attributes'};
-    $fieldDescription = $params->{$fieldName.'_tooltip'} if defined $params->{$fieldName.'_tooltip'};
-    $fieldDescription = $params->{$fieldName.'_description'} if defined $params->{$fieldName.'_description'};
-    $fieldTitle = $params->{$fieldName.'_title'} if defined $params->{$fieldName.'_title'}; # see also map
-    $fieldAllowedValues = $params->{$fieldName.'_values'} if defined $params->{$fieldName.'_values'};
-    $fieldDefault = $params->{$fieldName.'_default'} if defined $params->{$fieldName.'_default'};
-    $fieldType = $params->{$fieldName.'_type'} if defined $params->{$fieldName.'_type'};
+    $fieldSize = $params->{$fieldName . '_size'} if defined $params->{$fieldName . '_size'};
+    $fieldAttrs = $params->{$fieldName . '_attributes'} if defined $params->{$fieldName . '_attributes'};
+    $fieldDescription = $params->{$fieldName . '_tooltip'} if defined $params->{$fieldName . '_tooltip'};
+    $fieldDescription = $params->{$fieldName . '_description'} if defined $params->{$fieldName . '_description'};
+    $fieldTitle = $params->{$fieldName . '_title'} if defined $params->{$fieldName . '_title'};    # see also map
+    $fieldAllowedValues = $params->{$fieldName . '_values'} if defined $params->{$fieldName . '_values'};
+    $fieldDefault = $params->{$fieldName . '_default'} if defined $params->{$fieldName . '_default'};
+    $fieldType = $params->{$fieldName . '_type'} if defined $params->{$fieldName . '_type'};
 
-    my $fieldFormat = $params->{$fieldName.'_format'} || $theFormat;
+    my $fieldFormat = $params->{$fieldName . '_format'} || $theFormat;
 
-    my $fieldSort = Foswiki::Func::isTrue($params->{$fieldName.'_sort'}, $theSort);
+    my $fieldSort = Foswiki::Func::isTrue($params->{$fieldName . '_sort'}, $theSort);
     $fieldAllowedValues = sortValues($fieldAllowedValues, $fieldSort) if $fieldSort;
 
     # temporarily remap field to another type
     my $fieldClone;
-    if (defined($params->{$fieldName.'_type'}) || 
-	defined($params->{$fieldName.'_size'}) ||
-        defined($params->{$fieldName.'_name'}) ||
-        $fieldSort) {
+    if ( defined($params->{$fieldName . '_type'})
+      || defined($params->{$fieldName . '_size'})
+      || defined($params->{$fieldName . '_name'})
+      || $fieldSort)
+    {
       $fieldClone = $form->createField(
-	$fieldType,
-	name          => $params->{$fieldName.'_name'} || $fieldName,
-	title         => $fieldTitle,
-	size          => $fieldSize,
-	value         => $fieldAllowedValues,
-	tooltip       => $fieldDescription,
-	attributes    => $fieldAttrs,
-	definingTopic => $fieldDefiningTopic,
-	web           => $topicObj->web,
-	topic         => $topicObj->topic,
+        $fieldType,
+        name => $params->{$fieldName . '_name'} || $fieldName,
+        title => $fieldTitle,
+        size => $fieldSize,
+        value => $fieldAllowedValues,
+        description => $fieldDescription,
+        tooltip => $fieldDescription,
+        attributes => $fieldAttrs,
+        definingTopic => $fieldDefiningTopic,
+        web => $topicObj->web,
+        topic => $topicObj->topic,
       );
       $field = $fieldClone;
-    } 
-
+    }
 
     #writeDebug("reading fieldName=$fieldName");
 
@@ -600,7 +627,7 @@ sub handleRENDERFOREDIT {
     if (defined $theValue) {
       $fieldValue = $theValue;
     } else {
-      $fieldValue = $params->{$fieldName.'_value'};
+      $fieldValue = $params->{$fieldName . '_value'};
     }
 
     unless (defined $fieldValue) {
@@ -613,12 +640,12 @@ sub handleRENDERFOREDIT {
       unless ($metaField) {
         # Not a valid field name, maybe it's a title.
         $fieldName = Foswiki::Form::fieldTitle2FieldName($fieldName);
-        $metaField = $topicObj->get('FIELD', $fieldName );
+        $metaField = $topicObj->get('FIELD', $fieldName);
       }
       $fieldValue = $metaField->{value} if $metaField;
     }
 
-    $fieldValue = $fieldDefault unless defined $fieldValue;
+    $fieldValue = $fieldDefault unless defined $fieldValue && $fieldValue ne '';
 
     next if $theInclude && $fieldName !~ /$theInclude/;
     next if $theExclude && $fieldName =~ /$theExclude/;
@@ -626,40 +653,35 @@ sub handleRENDERFOREDIT {
     next if $theExcludeAttr && $fieldAttrs =~ /$theExcludeAttr/;
 
     unless (defined $fieldValue) {
-      $fieldValue = "\0"; # prevent dropped value attr in CGI.pm
+      $fieldValue = "\0";    # prevent dropped value attr in CGI.pm
     }
 
-    $fieldEdit = $session->{plugins}->dispatch(
-      'renderFormFieldForEditHandler', $fieldName, $fieldType, $fieldSize,
-        $fieldValue, $fieldAttrs, $fieldAllowedValues
-    );
+    $fieldEdit = $session->{plugins}->dispatch('renderFormFieldForEditHandler', $fieldName, $fieldType, $fieldSize, $fieldValue, $fieldAttrs, $fieldAllowedValues);
 
-    my $isHidden = ($theHidden && $fieldName =~ /^($theHidden)$/)?1:0;
+    my $isHidden = ($theHidden && $fieldName =~ /^($theHidden)$/) ? 1 : 0;
     unless ($fieldEdit) {
       if ($isHidden) {
-	# sneak in the value into the topicObj
+        # sneak in the value into the topicObj
         my $metaField = $topicObj->get('FIELD', $fieldName);
         if ($metaField) {
           $metaField->{value} = $fieldValue;
         } else {
           # temporarily add metaField for rendering it as hidden field
-          $metaField = { 
-            name => $fieldName, 
-            title => $fieldName, 
+          $metaField = {
+            name => $fieldName,
+            title => $fieldName,
             value => $fieldValue
-          }; 
+          };
           $topicObj->putKeyed('FIELD', $metaField);
         }
-	$fieldEdit = $field->renderHidden($topicObj);
+        $fieldEdit = $field->renderHidden($topicObj);
       } else {
-	if ($Foswiki::Plugins::VERSION > 2.0) {
-	  ($fieldExtra, $fieldEdit) = 
-	    $field->renderForEdit($topicObj, $fieldValue);
-	} else {
-	  # pre-TOM
-	  ($fieldExtra, $fieldEdit) = 
-	    $field->renderForEdit($thisWeb, $thisTopic, $fieldValue);
-	}
+        if ($Foswiki::Plugins::VERSION > 2.0) {
+          ($fieldExtra, $fieldEdit) = $field->renderForEdit($topicObj, $fieldValue);
+        } else {
+          # pre-TOM
+          ($fieldExtra, $fieldEdit) = $field->renderForEdit($thisWeb, $thisTopic, $fieldValue);
+        }
       }
     }
 
@@ -675,7 +697,7 @@ sub handleRENDERFOREDIT {
       $pre.$tmp.$post;
     /ge;
 
-    my $line = $isHidden?$theHiddenFormat:$fieldFormat;
+    my $line = $isHidden ? $theHiddenFormat : $fieldFormat;
     $fieldTitle = $fieldTitles->{$fieldName} if $fieldTitles && $fieldTitles->{$fieldName};
     my $fieldMandatory = '';
     $fieldMandatory = $theMandatory if $field->isMandatory();
@@ -702,8 +724,7 @@ sub handleRENDERFOREDIT {
     $field->{name} = $origFieldName if defined $origFieldName;
   }
 
-
-  my $result = $theHeader.join($theSep, @result).$theFooter;
+  my $result = $theHeader . join($theSep, @result) . $theFooter;
   $result =~ s/\$nop//g;
   $result =~ s/\$n/\n/g;
   $result =~ s/\$perce?nt/%/g;
@@ -711,7 +732,7 @@ sub handleRENDERFOREDIT {
 
   #print STDERR "result=$result\n";
 
-  return '<literal><noautolink>'.$result.'</noautolink></literal>';
+  return '<literal><noautolink>' . $result . '</noautolink></literal>';
 }
 
 ##############################################################################
@@ -730,9 +751,9 @@ sub sortValues {
   }
 
   if ($isNumeric) {
-    @values = sort {$a <=> $b} @values;
+    @values = sort { $a <=> $b } @values;
   } else {
-    @values = sort {lc($a) cmp lc($b)} @values;
+    @values = sort { lc($a) cmp lc($b) } @values;
   }
 
   @values = reverse @values if $sort =~ /(rev(erse)?)|desc(end(ing)?)?/;

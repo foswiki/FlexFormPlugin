@@ -1,4 +1,4 @@
-%META:TOPICINFO{author="ProjectContributor" comment="" date="1411636821" format="1.1" version="1"}%
+%META:TOPICINFO{author="ProjectContributor" comment="" date="1418733456" format="1.1" version="1"}%
 ---+!! %TOPIC%
 %$SHORTDESCRIPTION% 
 
@@ -134,8 +134,9 @@ The =format= parameter may contain the following variables:
    * =$size=: field size 
    * =$attributes=: field attributes 
    * =$description=: field description 
-   * =$definingTopic=: topic where allowed values are defined
-   * =$value=: default value of the field
+   * =$definingtopic=: topic where allowed values are defined
+   * =$defaultvalue=: default value as specified in the defaults column
+   * =$value=: value as specified in the values column, or the default value
 
 Note that the actual results may vary depending on the formfield type of the !DataForm.
 
@@ -186,6 +187,10 @@ Note that the actual results may vary depending on the formfield type of the !Da
 |  Release: | %$RELEASE% |
 |  Version: | %$VERSION% |
 |  Change History: | <!-- versions below in reverse order -->&nbsp; |
+|  16 Dec 2014: | added =$defaultvalue= variable; \
+                  catch exceptions reading a form definition not to propagate up to the page level; \
+                  by default hide rows marked as hidden; \
+                  read formfield description either from the =tooltip= or =description= property |
 |  29 Sep 2014: | improved cross-engine compatibility displaying formfield values |
 |  28 Aug 2014: | added new feature %<nop>RENDERFORMDEF |
 |  03 Mar 2014: | work around different styles of inconsistencies in =renderForDisplay= across foswiki core releases |
