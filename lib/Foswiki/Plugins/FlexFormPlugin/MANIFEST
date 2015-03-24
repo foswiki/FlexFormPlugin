@@ -1,3 +1,7 @@
 data/System/FlexFormPlugin.txt 0644
-lib/Foswiki/Plugins/FlexFormPlugin/Core.pm 0644
+lib/Foswiki/Plugins/FlexFormPlugin/Base.pm 0644
+lib/Foswiki/Plugins/FlexFormPlugin/DEPENDENCIES 0644
 lib/Foswiki/Plugins/FlexFormPlugin.pm 0644
+lib/Foswiki/Plugins/FlexFormPlugin/RenderForDisplay.pm 0644
+lib/Foswiki/Plugins/FlexFormPlugin/RenderForEdit.pm 0644
+lib/Foswiki/Plugins/FlexFormPlugin/RenderFormDef.pm 0644

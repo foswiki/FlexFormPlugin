@@ -182,11 +182,13 @@ Note that the actual results may vary depending on the formfield type of the !Da
 -->
 
 |  Author(s): | Foswiki:MichaelDaum|
-|  Copyright: | &copy; 2009-2014 Michael Daum http://michaeldaumconsulting.com |
+|  Copyright: | &copy; 2009-2015 Michael Daum http://michaeldaumconsulting.com |
 |  License: | [[http://www.gnu.org/licenses/gpl.html][GPL (Gnu General Public License)]] |
 |  Release: | %$RELEASE% |
 |  Version: | %$VERSION% |
 |  Change History: | <!-- versions below in reverse order -->&nbsp; |
+|  24 Mar 2015: | working around encoding problems with CGI >= 4.11 |
+|  12 Mar 2015: | restructured code to offer a proper perl api |
 |  16 Dec 2014: | added =$defaultvalue= variable; \
                   catch exceptions reading a form definition not to propagate up to the page level; \
                   by default hide rows marked as hidden; \

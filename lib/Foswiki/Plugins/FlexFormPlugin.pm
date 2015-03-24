@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 # 
-# Copyright (C) 2009-2014 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2015 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,57 +18,71 @@ package Foswiki::Plugins::FlexFormPlugin;
 use strict;
 use warnings;
 
-our $VERSION = '4.00';
-our $RELEASE = '4.00';
+our $VERSION = '5.00';
+our $RELEASE = '24 Mar 2015';
 our $SHORTDESCRIPTION = 'Flexible way to render <nop>DataForms';
 our $NO_PREFS_IN_TOPIC = 1;
-our $doneInit;
-our $baseWeb;
-our $baseTopic;
+our $renderForEditInstance;
+our $renderForDisplayInstance;
+our $renderFormDefInstance;
 
-##############################################################################
 sub initPlugin {
-  ($baseTopic, $baseWeb) = @_;
 
-  Foswiki::Func::registerTagHandler('RENDERFOREDIT', sub {
-    init();
-    return Foswiki::Plugins::FlexFormPlugin::Core::handleRENDERFOREDIT(@_);
-  });
+  Foswiki::Func::registerTagHandler('RENDERFOREDIT', \&renderForEdit);
+  Foswiki::Func::registerTagHandler('RENDERFORDISPLAY', \&renderForDisplay);
+  Foswiki::Func::registerTagHandler('RENDERFORMDEF', \&renderFormDef);
 
-  Foswiki::Func::registerTagHandler('RENDERFORDISPLAY', sub {
-    init();
-    return Foswiki::Plugins::FlexFormPlugin::Core::handleRENDERFORDISPLAY(@_);
-  });
-
-  Foswiki::Func::registerTagHandler('RENDERFORMDEF', sub {
-    init();
-    return Foswiki::Plugins::FlexFormPlugin::Core::handleRENDERFORMDEF(@_);
-  });
-
-  $doneInit = 0;
   return 1;
 }
 
-###############################################################################
-sub init {
-  return if $doneInit;
-  $doneInit = 1;
-  require Foswiki::Plugins::FlexFormPlugin::Core;
-  Foswiki::Plugins::FlexFormPlugin::Core::init($baseWeb, $baseTopic);
+sub renderForEdit {
+  my $session = shift;
+
+  unless ($renderForEditInstance) {
+    require Foswiki::Plugins::FlexFormPlugin::RenderForEdit;
+    $renderForEditInstance = Foswiki::Plugins::FlexFormPlugin::RenderForEdit->new($session);
+  }
+
+  return $renderForEditInstance->handle(@_);
 }
 
-###############################################################################
-# deprecated to be used as a finish handler
-sub modifyHeaderHandler {
-  init();
-  return Foswiki::Plugins::FlexFormPlugin::Core::finish(@_);
+sub renderForDisplay {
+  my $session = shift;
+
+  unless ($renderForDisplayInstance) {
+    require Foswiki::Plugins::FlexFormPlugin::RenderForDisplay;
+    $renderForDisplayInstance = Foswiki::Plugins::FlexFormPlugin::RenderForDisplay->new($session);
+  }
+
+  return $renderForDisplayInstance->handle(@_);
 }
 
-###############################################################################
+sub renderFormDef {
+  my $session = shift;
+
+  unless ($renderFormDefInstance) {
+    require Foswiki::Plugins::FlexFormPlugin::RenderFormDef;
+    $renderFormDefInstance = new Foswiki::Plugins::FlexFormPlugin::RenderFormDef($session)
+  }
+
+  return $renderFormDefInstance->handle(@_);
+}
+
+sub finishPlugin {
+
+  $renderForEditInstance->finish() if $renderForEditInstance;
+  $renderForDisplayInstance->finish() if $renderForDisplayInstance;
+  $renderFormDefInstance->finish() if $renderFormDefInstance;
+
+  $renderForEditInstance = undef;
+  $renderForDisplayInstance = undef;
+  $renderFormDefInstance = undef;
+
+}
+
 sub completePageHandler {
   $_[0] =~ s/<\/?literal>//g;
 }
-
 
 1;
 
