@@ -220,7 +220,6 @@ sub handle {
       $field = $fieldClone;
     }
     $this->translateField($field, $theForm, $theWeb);
-    $this->translateField($field, $theWeb, $theForm, $theWeb);
 
     #$this->writeDebug("reading fieldName=$fieldName");
 
@@ -277,12 +276,6 @@ sub handle {
         }
         $fieldEdit = $field->renderHidden($topicObj);
       } else {
-
-        # we need to decode values since CGI-4.11 but only if the field doesn't do that on its own
-        if ($CGI::VERSION >= 4.11 && !$field->can("decode")) {
-          $fieldValue = Encode::decode($Foswiki::cfg{Site}{CharSet}, $fieldValue); 
-        }
-
         if ($Foswiki::Plugins::VERSION > 2.0) {
           ($fieldExtra, $fieldEdit) = $field->renderForEdit($topicObj, $fieldValue);
         } else {
