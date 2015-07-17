@@ -187,6 +187,7 @@ Note that the actual results may vary depending on the formfield type of the !Da
 |  Release: | %$RELEASE% |
 |  Version: | %$VERSION% |
 |  Change History: | <!-- versions below in reverse order -->&nbsp; |
+|  17 Jul 2015: | fixed use of =param()= in list context |
 |  24 Mar 2015: | working around encoding problems with CGI >= 4.11 |
 |  12 Mar 2015: | restructured code to offer a proper perl api |
 |  16 Dec 2014: | added =$defaultvalue= variable; \

@@ -20,7 +20,7 @@ use warnings;
 
 use Foswiki::Func();
 use Foswiki::Form();
-use Data::Dump qw(dump);
+#use Data::Dump qw(dump);
 
 use constant TRACE => 0;    # toggle me
 our %topicObjs = (); # shared among all classes

@@ -22,8 +22,6 @@ use Foswiki::Func();
 use Foswiki::Form();
 use Foswiki::OopsException();
 use Error qw( :try );
-use Encode ();
-use CGI();
 
 use Foswiki::Plugins::FlexFormPlugin::Base();
 our @ISA = qw( Foswiki::Plugins::FlexFormPlugin::Base );
@@ -232,7 +230,10 @@ sub handle {
 
     unless (defined $fieldValue) {
       my $query = Foswiki::Func::getCgiQuery();
-      $fieldValue = $query->param($fieldName);
+      if (defined $query->param($fieldName)) {
+        $fieldValue = join(", ", grep {!/^$/} $query->multi_param($fieldName));
+        #print STDERR "fieldValue=$fieldValue\n";
+      }
     }
 
     unless (defined $fieldValue) {
@@ -258,7 +259,7 @@ sub handle {
 
     $fieldEdit = $this->{session}{plugins}->dispatch('renderFormFieldForEditHandler', $fieldName, $fieldType, $fieldSize, $fieldValue, $fieldAttrs, $fieldAllowedValues);
 
-    my $isHidden = ($theHidden && $fieldName =~ /^($theHidden)$/) ? 1 : 0;
+    my $isHidden = ($fieldAttrs=~ /h/i || $theHidden && $fieldName =~ /^($theHidden)$/) ? 1 : 0;
     unless ($fieldEdit) {
       if ($isHidden) {
         # sneak in the value into the topicObj
