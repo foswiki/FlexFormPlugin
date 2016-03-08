@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2015 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2016 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -51,8 +51,7 @@ sub handle {
   my $theHiddenFormat = $params->{hiddenformat};
   my $theSort = Foswiki::Func::isTrue($params->{sort}, 0);
   my $thePrefix = $params->{prefix};
-
-  my $useMultiLingual = Foswiki::Func::getContext()->{MultiLingualPluginEnabled};
+  my $theHideEmpty = Foswiki::Func::isTrue($params->{hideempty}, 0);
 
   if (!defined($theFormat) && !defined($theHeader) && !defined($theFooter)) {
     $theHeader = '<div class=\'foswikiFormSteps\'>';
@@ -68,7 +67,7 @@ sub handle {
     $theHeader = '' unless defined $theHeader;
     $theFooter = '' unless defined $theFooter;
   }
-  $theMandatory = " <span class='foswikiAlert'>**</span> " unless defined $theMandatory;
+  $theMandatory = " <span class='foswikiAlert'>*</span> " unless defined $theMandatory;
   $theHiddenFormat = '$edit' unless defined $theHiddenFormat;
 
   my $thisWeb = $theWeb;
@@ -217,7 +216,7 @@ sub handle {
       );
       $field = $fieldClone;
     }
-    $this->translateField($field, $theForm, $theWeb);
+    $this->translateField($field, $theWeb, $theForm);
 
     #$this->writeDebug("reading fieldName=$fieldName");
 
@@ -246,7 +245,7 @@ sub handle {
       $fieldValue = $metaField->{value} if $metaField;
     }
 
-    $fieldValue = $fieldDefault unless defined $fieldValue && $fieldValue ne '';
+    $fieldValue = $fieldDefault unless defined $fieldValue;
 
     next if $theInclude && $fieldName !~ /$theInclude/;
     next if $theExclude && $fieldName =~ /$theExclude/;
@@ -256,6 +255,14 @@ sub handle {
     unless (defined $fieldValue) {
       $fieldValue = "\0";    # prevent dropped value attr in CGI.pm
     }
+
+    my $fieldMandatory = '';
+    my $origFieldAttributes;
+    if (!$field->isMandatory() && Foswiki::Func::isTrue($params->{$fieldName . '_mandatory'}, 0)) {
+      $origFieldAttributes = $field->{attributes};
+      $field->{attributes} .= 'M';
+    }
+    $fieldMandatory = $theMandatory if $field->isMandatory();
 
     $fieldEdit = $this->{session}{plugins}->dispatch('renderFormFieldForEditHandler', $fieldName, $fieldType, $fieldSize, $fieldValue, $fieldAttrs, $fieldAllowedValues);
 
@@ -309,32 +316,37 @@ sub handle {
 
     my $line = $isHidden ? $theHiddenFormat : $fieldFormat;
     $fieldTitle = $fieldTitles->{$fieldName} if $fieldTitles && $fieldTitles->{$fieldName};
-    my $fieldMandatory = '';
-    $fieldMandatory = $theMandatory if $field->isMandatory();
+
+    # clean up
+    $fieldTitle =~ s/^\[\[([^]]+)\]\]$/$1/g;
 
     $fieldTitle = $this->translate($fieldTitle, $theFormWeb, $theForm);
+    $fieldDescription = $this->translate($fieldDescription, $theFormWeb, $theForm);
 
     $line =~ s/\$mandatory/$fieldMandatory/g;
-    $line =~ s/\$edit\b/$fieldEdit/g;
     $line =~ s/\$name\b/$fieldName/g;
     $line =~ s/\$type\b/$fieldType/g;
     $line =~ s/\$size\b/$fieldSize/g;
     $line =~ s/\$attrs\b/$fieldAttrs/g;
-    $line =~ s/\$values\b/$fieldAllowedValues/g;
-    $line =~ s/\$origvalues\b/$fieldOrigAllowedValues/g;
-    $line =~ s/\$(orig)?value\b/$fieldValue/g;
-    $line =~ s/\$default\b/$fieldDefault/g;
     $line =~ s/\$tooltip\b/$fieldDescription/g;
     $line =~ s/\$description\b/$fieldDescription/g;
     $line =~ s/\$title\b/$fieldTitle/g;
     $line =~ s/\$extra\b/$fieldExtra/g;
+    $line =~ s/\$default\b/$fieldDefault/g;
+    $line =~ s/\$values\b/$fieldAllowedValues/g;
+    $line =~ s/\$origvalues\b/$fieldOrigAllowedValues/g;
+    $line =~ s/\$(orig)?value\b/$fieldValue/g;
+    $line =~ s/\$edit\b/$fieldEdit/g;
 
     push @result, $line;
 
     # cleanup
     $fieldClone->finish() if defined $fieldClone;
     $field->{name} = $origFieldName if defined $origFieldName;
+    $field->{attributes} = $origFieldAttributes if defined $origFieldAttributes;
   }
+
+  return '' if $theHideEmpty && !@result;
 
   my $result = $theHeader . join($theSep, @result) . $theFooter;
   $result =~ s/\$nop//g;

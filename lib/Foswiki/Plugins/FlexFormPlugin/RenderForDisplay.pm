@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2015 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2016 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -226,8 +226,8 @@ sub handle {
       $field = $fieldClone;
     }
 
+    $fieldValue = $fieldDefault unless defined $fieldValue;
     next if $theHideEmpty && (!defined($fieldValue) || $fieldValue eq '');
-    $fieldValue = $fieldDefault unless defined $fieldValue && $fieldValue ne '';
 
     next if $theInclude && $fieldName !~ /$theInclude/;
     next if $theExclude && $fieldName =~ /$theExclude/;
@@ -242,12 +242,16 @@ sub handle {
     $line = '<noautolink>' . $line . '</noautolink>' unless $fieldAutolink;
 
     $fieldTitle = $fieldTitles->{$fieldName} if $fieldTitles && $fieldTitles->{$fieldName};
+
+    # clean up
+    $fieldTitle =~ s/^\[\[([^]]+)\]\]$/$1/g;
+
     $fieldTitle = $this->translate($fieldTitle, $theFormWeb, $theForm);
 
     # some must be expanded before renderForDisplay
+    $line =~ s/\$title\b/$fieldTitle/g;
     $line =~ s/\$values\b/$fieldAllowedValues/g;
     $line =~ s/\$origvalues\b/$fieldOrigAllowedValues/g;
-    $line =~ s/\$title\b/$fieldTitle/g;
 
     # For Foswiki > 1.2, treat $value ourselves to get a consistent
     # behavior across all releases:
@@ -276,12 +280,12 @@ sub handle {
     $line =~ s/\$type\b/$fieldType/g;
     $line =~ s/\$size\b/$fieldSize/g;
     $line =~ s/\$attrs\b/$fieldAttrs/g;
-    $line =~ s/\$value(\(display\))?\b/$fieldValue/g;
-    $line =~ s/\$origvalue\b/$origValue/g;
-    $line =~ s/\$default\b/$fieldDefault/g;
     $line =~ s/\$(tooltip|description)\b/$fieldDescription/g;
     $line =~ s/\$title\b/$fieldTitle/g;
     $line =~ s/\$form\b/$formTitle/g;
+    $line =~ s/\$default\b/$fieldDefault/g;
+    $line =~ s/\$value(\(display\))?\b/$fieldValue/g;
+    $line =~ s/\$origvalue\b/$origValue/g;
 
     push @result, $line;
 

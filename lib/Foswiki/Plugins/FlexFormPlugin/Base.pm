@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2015 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2016 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -84,6 +84,7 @@ sub translate {
 
 sub translateField {
   my ($this, $field, $web, $topic) = @_;
+
 
   return unless $field;
   return unless $field->{type} =~ /\+values/;

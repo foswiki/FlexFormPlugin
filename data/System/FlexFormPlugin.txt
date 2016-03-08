@@ -1,6 +1,6 @@
 %META:TOPICINFO{author="ProjectContributor" comment="" date="1418733456" format="1.1" version="1"}%
 ---+!! %TOPIC%
-%$SHORTDESCRIPTION% 
+%FORMFIELD{"Description"}% 
 
 %TOC%
 
@@ -40,6 +40,7 @@ any topic actually using it. This may be used to provide more defailed insights 
 | form="..." | topic name containing the !DataForm definition | form found at the base topic |
 | header="..." | header string to be put in front of the output | &lt;empty string> |
 | hidden="..." | those fields that match this regular expression will be rendered hidden | undefined |
+| hideempty="on/off" | hide empty formfields | off |
 | includeattr="..." | regular expression field attributes must match to be included in the output | undefined |
 | include="..." | regular expression fieldnames must match to be included in the output | undefined |
 | mandatory="..." | string to be inserted when a field is mandatory | <span class='foswikiAlert'>**</span> |
@@ -175,18 +176,12 @@ Note that the actual results may vary depending on the formfield type of the !Da
 ---++ Installation Instructions
 %$INSTALL_INSTRUCTIONS%
 
----++ Info
+---++ Dependencies
+%$DEPENDENCIES%
 
-<!--
-   * Set SHORTDESCRIPTION = %$SHORTDESCRIPTION%
--->
-
-|  Author(s): | Foswiki:MichaelDaum|
-|  Copyright: | &copy; 2009-2015 Michael Daum http://michaeldaumconsulting.com |
-|  License: | [[http://www.gnu.org/licenses/gpl.html][GPL (Gnu General Public License)]] |
-|  Release: | %$RELEASE% |
-|  Version: | %$VERSION% |
-|  Change History: | <!-- versions below in reverse order -->&nbsp; |
+---++ Change History
+|  08 Mar 2016: | clean up formfield title before trying to translate it; \
+                  added =hideempty= for RENDERFOREDIT |
 |  17 Jul 2015: | fixed use of =param()= in list context |
 |  24 Mar 2015: | working around encoding problems with CGI >= 4.11 |
 |  12 Mar 2015: | restructured code to offer a proper perl api |
@@ -226,8 +221,14 @@ Note that the actual results may vary depending on the formfield type of the !Da
 |  11 Mar 2010: | Foswiki:Main.MartinCleaver - added ability to extract allowed values of a field Foswiki:Tasks.Item8671 | 
 |  10 Mar 2010: | added fine-grained control over each formfield, i.e. remapping of the formfield type |
 |  08 Mar 2010: | initial release |
-|  Dependencies: | %$DEPENDENCIES% |
-|  Home page: | Foswiki:Extensions/%TOPIC% |
-|  Support: | Foswiki:Support/%TOPIC% |
 
-<!-- Do _not_ attempt to edit this topic; it is auto-generated. -->
+%META:FORM{name="PackageForm"}%
+%META:FIELD{name="Author" title="Author" value="Foswiki:MichaelDaum"}%
+%META:FIELD{name="Copyright" title="Copyright" value="&copy; 2009-2016 Michael Daum http://michaeldaumconsulting.com"}%
+%META:FIELD{name="Description" title="Description" value="%25$SHORTDESCRIPTION%25"}%
+%META:FIELD{name="Home" title="Home" value="Foswiki:Extensions/%TOPIC%"}%
+%META:FIELD{name="License" title="License" value="[[http://www.gnu.org/licenses/gpl.html][GPL (Gnu General Public License)]]"}%
+%META:FIELD{name="Release" title="Release" value="%$RELEASE%"}%
+%META:FIELD{name="Repository" title="Repository" value="https://github.com/foswiki/%TOPIC%"}%
+%META:FIELD{name="Support" title="Support" value="Foswiki:Support/%TOPIC%"}%
+%META:FIELD{name="Version" title="Version" value="%$VERSION%"}%
