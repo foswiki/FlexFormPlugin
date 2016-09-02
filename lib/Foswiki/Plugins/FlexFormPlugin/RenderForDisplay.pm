@@ -226,7 +226,7 @@ sub handle {
       $field = $fieldClone;
     }
 
-    $fieldValue = $fieldDefault unless defined $fieldValue;
+    $fieldValue = $fieldDefault unless defined $fieldValue && $fieldValue ne '';
     next if $theHideEmpty && (!defined($fieldValue) || $fieldValue eq '');
 
     next if $theInclude && $fieldName !~ /$theInclude/;

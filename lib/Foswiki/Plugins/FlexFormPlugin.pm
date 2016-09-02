@@ -18,8 +18,8 @@ package Foswiki::Plugins::FlexFormPlugin;
 use strict;
 use warnings;
 
-our $VERSION = '5.20';
-our $RELEASE = '08 Mar 2016';
+our $VERSION = '5.21';
+our $RELEASE = '02 Sep 2016';
 our $SHORTDESCRIPTION = 'Flexible way to render <nop>DataForms';
 our $NO_PREFS_IN_TOPIC = 1;
 our $renderForEditInstance;

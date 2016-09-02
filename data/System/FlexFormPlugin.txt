@@ -20,7 +20,7 @@ be avoided by using a %<nop>RENDERFOREDIT macro that loops over all formfields i
 to render the input form in a more dynamic way while still customizing the overall output.
 
 In addition, !FlexFormPlugin facilitates the extraction of field default values (such as valid schema options) from 
-!DataForm. See http://foswiki.org/Development/MacroForRetrievingFieldDefaultValues for background.
+!DataForm. See https://foswiki.org/Development/MacroForRetrievingFieldDefaultValues for background.
 
 While %<nop>RENDERFOREDIT% and %<nop>%RENDERFORDISPLAY render forms for the net data using a !DataForm
 the %<nop>RENDERFORMDEF= macro renders information about the !DataForm definition itself identpendent of
@@ -180,6 +180,7 @@ Note that the actual results may vary depending on the formfield type of the !Da
 %$DEPENDENCIES%
 
 ---++ Change History
+|  02 Sep 2016: | improved support to translate formfields using Foswiki:Extensions.MultiLingualPlugin |
 |  08 Mar 2016: | clean up formfield title before trying to translate it; \
                   added =hideempty= for RENDERFOREDIT |
 |  17 Jul 2015: | fixed use of =param()= in list context |

@@ -69,17 +69,8 @@ sub translate {
   return "" unless defined $text && $text ne "";
 
   return $text unless Foswiki::Func::getContext()->{MultiLingualPluginEnabled};
-
-  unless ($this->{translator}) {
-    require Foswiki::Plugins::MultiLingualPlugin;
-    $this->{translator} = Foswiki::Plugins::MultiLingualPlugin::getCore();
-  }
-
-  my $params = {
-    _DEFAULT => $text,
-  };
-
-  return $this->{translator}->TRANSLATE($this->{session}, $params, $topic, $web);
+  require Foswiki::Plugins::MultiLingualPlugin;
+  return Foswiki::Plugins::MultiLingualPlugin::translate($text, $web, $topic);
 }
 
 sub translateField {

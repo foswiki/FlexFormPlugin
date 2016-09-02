@@ -245,7 +245,7 @@ sub handle {
       $fieldValue = $metaField->{value} if $metaField;
     }
 
-    $fieldValue = $fieldDefault unless defined $fieldValue;
+    $fieldValue = $fieldDefault unless defined $fieldValue && $fieldValue ne '';
 
     next if $theInclude && $fieldName !~ /$theInclude/;
     next if $theExclude && $fieldName =~ /$theExclude/;
