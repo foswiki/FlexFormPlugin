@@ -1,3 +1,4 @@
+!noci
 data/System/FlexFormPlugin.txt 0644
 lib/Foswiki/Plugins/FlexFormPlugin/Base.pm 0644
 lib/Foswiki/Plugins/FlexFormPlugin/DEPENDENCIES 0644

@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2016 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2017 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -43,6 +43,8 @@ sub handle {
   my $theFields = $params->{field} || $params->{fields};
   my $theExclude = $params->{exclude};
   my $theInclude = $params->{include};
+  my $theIncludeAttr = $params->{includeattr};
+  my $theExcludeAttr = $params->{excludeattr};
 
   my $form;
   try {
@@ -70,6 +72,8 @@ sub handle {
     next unless $field;
     next if defined $theExclude && $field->{name} =~ /$theExclude/;
     next if defined $theInclude && $field->{name} !~ /$theInclude/;
+    next if $theIncludeAttr && $field->{attributes} !~ /$theIncludeAttr/;
+    next if $theExcludeAttr && $field->{attributes} =~ /$theExcludeAttr/;
 
     my $line = $theFormat;
 
@@ -93,6 +97,10 @@ sub handle {
 
   my $result = $theHeader . join($theSep, @result) . $theFooter;
   $result =~ s/\$form/$formName/g;
+  $result =~ s/\$nop//g;
+  $result =~ s/\$n/\n/g;
+  $result =~ s/\$perce?nt/%/g;
+  $result =~ s/\$dollar/\$/g;
 
   return $result;
 }

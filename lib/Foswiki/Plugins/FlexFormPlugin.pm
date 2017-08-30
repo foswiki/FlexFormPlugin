@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 # 
-# Copyright (C) 2009-2016 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2017 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,8 +18,8 @@ package Foswiki::Plugins::FlexFormPlugin;
 use strict;
 use warnings;
 
-our $VERSION = '5.21';
-our $RELEASE = '02 Sep 2016';
+our $VERSION = '5.30';
+our $RELEASE = '30 Aug 2017';
 our $SHORTDESCRIPTION = 'Flexible way to render <nop>DataForms';
 our $NO_PREFS_IN_TOPIC = 1;
 our $renderForEditInstance;

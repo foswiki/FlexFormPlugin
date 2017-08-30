@@ -121,7 +121,9 @@ The =format= parameter may contain the following variables:
 | "..." or form="..." | the topic holding the !DataForm definition | current topic |
 | field="..." or fields="..." | a comma separated list of fields to render information about | all fields |
 | include="..." | regular expression a field name must match to be listed | |
+| includeattr="..." | regular expression field attributes must match to be included in the output | undefined |
 | exclude="..." | regular expression a field name must not match to be listed | |
+| excludeattr="..." | regular expression field attributes must match to be excluded from the output | undefined |
 | header | header string prepended to the result | |
 | format | format string for each field to be rendered in the result | |
 | separator | separator between lines when field information is rendered | |
@@ -180,6 +182,7 @@ Note that the actual results may vary depending on the formfield type of the !Da
 %$DEPENDENCIES%
 
 ---++ Change History
+|  30 Aug 2016: | added =includeattr=, =excludeattr= to RENDERFORMDEF |
 |  02 Sep 2016: | improved support to translate formfields using Foswiki:Extensions.MultiLingualPlugin |
 |  08 Mar 2016: | clean up formfield title before trying to translate it; \
                   added =hideempty= for RENDERFOREDIT |
@@ -225,7 +228,7 @@ Note that the actual results may vary depending on the formfield type of the !Da
 
 %META:FORM{name="PackageForm"}%
 %META:FIELD{name="Author" title="Author" value="Foswiki:MichaelDaum"}%
-%META:FIELD{name="Copyright" title="Copyright" value="&copy; 2009-2016 Michael Daum http://michaeldaumconsulting.com"}%
+%META:FIELD{name="Copyright" title="Copyright" value="&copy; 2009-2017 Michael Daum http://michaeldaumconsulting.com"}%
 %META:FIELD{name="Description" title="Description" value="%25$SHORTDESCRIPTION%25"}%
 %META:FIELD{name="Home" title="Home" value="Foswiki:Extensions/%TOPIC%"}%
 %META:FIELD{name="License" title="License" value="[[http://www.gnu.org/licenses/gpl.html][GPL (Gnu General Public License)]]"}%
