@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2017 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2018 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -53,13 +53,40 @@ sub handle {
   $theExcludeAttr = '\bh\b' unless defined $theExcludeAttr;
 
   # get defaults from template
+  my $theType = $params->{type} || '';
+  $theType = 'div' if !Foswiki::Func::getContext()->{GridLayoutPluginEnabled} && $theType eq 'grid';
+  $theType = 'table' unless $theType =~ /^(div|table|grid)$/;
+
   if (!defined($theFormat) && !defined($theHeader) && !defined($theFooter)) {
-    $theHeader = '<div class=\'foswikiFormSteps\'><table class=\'foswikiLayoutTable\'>';
-    $theFooter = '</table></div>';
-    $theFormat = '<tr>
-      <th class="foswikiTableFirstCol"> %A_TITLE%: </th>
-      <td class="foswikiFormValue"> %A_VALUE% </td>
-    </tr>'
+
+    # table
+    if ($theType eq '' || $theType eq 'table') { 
+      $theHeader = '<div class=\'foswikiFormSteps\'><table class=\'foswikiLayoutTable\'>';
+      $theFooter = '</table></div>';
+      $theFormat = '<tr>
+        <th class="foswikiTableFirstCol"> $title: </th>
+        <td class="foswikiFormValue"> $value </td>
+      </tr>'
+    } 
+
+    # div
+    elsif ($theType eq 'div') { 
+      $theHeader = '<div class=\'foswikiFormSteps\'>';
+      $theFooter = '</div>';
+      $theFormat = '<div class=\'foswikiFormStep\'>
+        <h3> $title </h3>
+        $value
+      </div>';
+    } 
+
+    # grid
+    elsif (Foswiki::Func::getContext()->{GridLayoutPluginEnabled} && $theType eq 'grid') {
+      $theHeader = '<div class=\'foswikiPageForm foswikiGridForm\'>%BEGINGRID{gutter="1"}%';
+      $theFooter = '%ENDGRID%</div>';
+      $theFormat = '%BEGINCOL{"3" class="foswikiGridHeader"}% <h3 >$title:</h3>
+        %BEGINCOL{"9"}%
+        $value$n';
+    }
   }
 
   $theHeader ||= '';

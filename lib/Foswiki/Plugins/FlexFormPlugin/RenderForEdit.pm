@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2017 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2018 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -53,15 +53,47 @@ sub handle {
   my $thePrefix = $params->{prefix};
   my $theHideEmpty = Foswiki::Func::isTrue($params->{hideempty}, 0);
 
+  # get defaults from template
+  my $theType = $params->{type} || '';
+  $theType = 'div' if !Foswiki::Func::getContext()->{GridLayoutPluginEnabled} && $theType eq 'grid';
+  $theType = 'div' unless $theType =~ /^(div|table|grid)$/;
+
   if (!defined($theFormat) && !defined($theHeader) && !defined($theFooter)) {
-    $theHeader = '<div class=\'foswikiFormSteps\'>';
-    $theFooter = '</div>';
-    $theFormat = '<div class=\'foswikiFormStep\'>
-      <h3> $title:$mandatory </h3>
-      $edit
-      $extra
-      <div class=\'foswikiFormDescription\'>$description</div>
-    </div>';
+
+    # div
+    if ($theType eq '' || $theType eq 'div') { 
+      $theHeader = '<div class=\'foswikiFormSteps foswikiEditForm\'>';
+      $theFooter = '</div>';
+      $theFormat = '<div class=\'foswikiFormStep\'>
+        <h3> $title:$mandatory </h3>
+        $edit
+        $extra
+        <div class=\'foswikiFormDescription\'>$description</div>
+      </div>';
+    } 
+
+    # table
+    elsif ($theType eq 'table') {
+      $theHeader = '<div class=\'foswikiPageForm foswikiTableEditForm\'><table class=\'foswikiLayoutTable\'>';
+      $theFooter = '</table></div>';
+      $theFormat = '<tr><th> $title:$mandatory </th>
+        <td>
+        $edit
+        $extra
+        <div class=\'foswikiFormDescription\'>$description</div>
+        </td></tr>';
+    } 
+
+    # grid
+    elsif (Foswiki::Func::getContext()->{GridLayoutPluginEnabled} && $theType eq 'grid') {
+      $theHeader = '<div class=\'foswikiPageForm foswikiGridForm\'>%BEGINGRID{gutter="1"}%';
+      $theFooter = '%ENDGRID%</div>';
+      $theFormat = '%BEGINCOL{"3" class="foswikiGridHeader"}% <h3 >$title:$mandatory</h3>
+        %BEGINCOL{"9"}%
+        $edit
+        $extra
+        <div class=\'foswikiFormDescription\'>$description</div>';
+    }
   } else {
     $theFormat = '$edit$mandatory' unless defined $theFormat;
     $theHeader = '' unless defined $theHeader;

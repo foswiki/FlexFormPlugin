@@ -1,4 +1,4 @@
-%META:TOPICINFO{author="ProjectContributor" comment="" date="1418733456" format="1.1" version="1"}%
+%META:TOPICINFO{author="ProjectContributor" comment="" date="1528135318" format="1.1" version="1"}%
 ---+!! %TOPIC%
 %FORMFIELD{"Description"}% 
 
@@ -29,15 +29,16 @@ any topic actually using it. This may be used to provide more defailed insights 
 ---++ Usage
 ---+++ RENDERFOREDIT
 | *Parameter* | *Description* | *Default* |
-| "..." (or topic="..." | name of a topic to render the edit form for | the base topic of the current url |
-| revision="..." | topic revision which to use the data from while populating the edit form |
+| "..." or topic="..." | name of a topic to render the edit form for | the base topic of the current url |
+| revision="..." | topic revision which to use the data from while populating the edit form | |
 | excludeattr="..." | regular expression field attributes must match to be excluded from the output | undefined |
 | exclude="..." | regular expression fieldnames must match to be excluded from the output | undefined |
 | fields="&lt;fieldname1>, &lt;fieldname2>, ..." | list of formfields to render the interface for | all known formfields |
-| prefix="..." | adds a prefix string to the name while rendering the editor for a formfield |
+| prefix="..." | adds a prefix string to the name while rendering the editor for a formfield | |
 | footer="..." | footer string to apped to the output | &lt;empty string> |
 | format="..." | format string to render each formfield with, more info below | =$edit$mandatory= |
 | form="..." | topic name containing the !DataForm definition | form found at the base topic |
+| type="div/table/grid" | specify the layout to be used in case no format is specified manually (using header,format,separator and footer parameters); grid is only available when Foswiki:Extensions/GridLayoutPlugin is installed | div |
 | header="..." | header string to be put in front of the output | &lt;empty string> |
 | hidden="..." | those fields that match this regular expression will be rendered hidden | undefined |
 | hideempty="on/off" | hide empty formfields | off |
@@ -65,12 +66,13 @@ any topic actually using it. This may be used to provide more defailed insights 
 ---+++ RENDERFORDISPLAY
 | *Parameter* | *Description* | *Default* |
 | "..." or topic="..." | name of a topic to display the form for | the base topic of the current url |
-| revision="..." | topic revision to display |
+| revision="..." | topic revision to display | |
 | autolink="on/off" | enable/disable !WikiWord autolinking when rendering a formfield; setting =autolink= sets the default for all fields specific settings of =&lt;fieldname>_autolink=which can, that is you can disable autolinking globally and switch it back on per field | on |
 | excludeattr="..." | regular expression field attributes must match to be excluded from the output | undefined |
 | exclude="..." | regular expression fieldnames must match to be excluded from the output | undefined |
 | fields="&lt;fieldname1>, &lt;fieldname2>, ..." | list of formfields to be displayed | all known formfields |
 | footer="..." | footer string to apped to the output | &lt;empty string> |
+| type="div/table/grid" | specify the layout to be used in case no format is specified manually (using header,format,separator and footer parameters); grid is only available when Foswiki:Extensions/GridLayoutPlugin is installed | table |
 | format="..." | format string to render each formfield with, more info below | =$edit$mandatory= |
 | form="..." | topic name containing the !DataForm definition | form found at the base topic |
 | header="..." | header string to be put in front of the output | &lt;empty string> |
@@ -143,6 +145,20 @@ The =format= parameter may contain the following variables:
 
 Note that the actual results may vary depending on the formfield type of the !DataForm.
 
+---++ Form layouts
+
+There are three layouts that are supported by =%RENDERFORDISPLAY= and %RENDERFOREDIT= that may be specified using the =type="..."= parameter:
+
+   * =table=
+   * =div=
+   * =grid= (only supported if [[Foswiki:Extensions/GridLayoutPlugin][GridLayoutPlugin]] is installed)
+
+All of them have different advantages. A =table= layout aligns rows and columns nicely while using screen space quite economical.
+However tables don't behave responsive on mobile devices. A =div= based layout stacks formfields and their header from top to down
+thus using more screen space for the benefit of being well readable on mobile devices as well. The =grid= layout covers a middle ground
+between both: it looks like =table= layout on wide screens but will collaps columns into a stack as form elements fit better vertically
+than horizontal on mobile devices.
+
 ---++ Examples
 
 <verbatim>
@@ -182,6 +198,8 @@ Note that the actual results may vary depending on the formfield type of the !Da
 %$DEPENDENCIES%
 
 ---++ Change History
+%TABLE{columnwidths="7em" tablewidth="100%"}%
+|  04 Jul 2018: | added =type= parameter to RENDERFORDISPLAY and RENDERFOREDIT |
 |  30 Aug 2016: | added =includeattr=, =excludeattr= to RENDERFORMDEF |
 |  02 Sep 2016: | improved support to translate formfields using Foswiki:Extensions.MultiLingualPlugin |
 |  08 Mar 2016: | clean up formfield title before trying to translate it; \
@@ -228,7 +246,7 @@ Note that the actual results may vary depending on the formfield type of the !Da
 
 %META:FORM{name="PackageForm"}%
 %META:FIELD{name="Author" title="Author" value="Foswiki:MichaelDaum"}%
-%META:FIELD{name="Copyright" title="Copyright" value="&copy; 2009-2017 Michael Daum http://michaeldaumconsulting.com"}%
+%META:FIELD{name="Copyright" title="Copyright" value="&copy; 2009-2018 Michael Daum http://michaeldaumconsulting.com"}%
 %META:FIELD{name="Description" title="Description" value="%25$SHORTDESCRIPTION%25"}%
 %META:FIELD{name="Home" title="Home" value="Foswiki:Extensions/%TOPIC%"}%
 %META:FIELD{name="License" title="License" value="[[http://www.gnu.org/licenses/gpl.html][GPL (Gnu General Public License)]]"}%
