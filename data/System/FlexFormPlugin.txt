@@ -1,4 +1,4 @@
-%META:TOPICINFO{author="ProjectContributor" comment="" date="1528135318" format="1.1" version="1"}%
+%META:TOPICINFO{author="ProjectContributor" comment="" date="1573556648" format="1.1" version="1"}%
 ---+!! %TOPIC%
 %FORMFIELD{"Description"}% 
 
@@ -147,7 +147,7 @@ Note that the actual results may vary depending on the formfield type of the !Da
 
 ---++ Form layouts
 
-There are three layouts that are supported by =%RENDERFORDISPLAY= and %RENDERFOREDIT= that may be specified using the =type="..."= parameter:
+There are three layouts that are supported by =%RENDERFORDISPLAY= and =%RENDERFOREDIT= that may be specified using the =type="..."= parameter:
 
    * =table=
    * =div=
@@ -199,6 +199,7 @@ than horizontal on mobile devices.
 
 ---++ Change History
 %TABLE{columnwidths="7em" tablewidth="100%"}%
+|  12 Nov 2019: | normalize web parameter before caching topic objects |
 |  04 Jul 2018: | added =type= parameter to RENDERFORDISPLAY and RENDERFOREDIT |
 |  30 Aug 2016: | added =includeattr=, =excludeattr= to RENDERFORMDEF |
 |  02 Sep 2016: | improved support to translate formfields using Foswiki:Extensions.MultiLingualPlugin |
@@ -246,7 +247,7 @@ than horizontal on mobile devices.
 
 %META:FORM{name="PackageForm"}%
 %META:FIELD{name="Author" title="Author" value="Foswiki:MichaelDaum"}%
-%META:FIELD{name="Copyright" title="Copyright" value="&copy; 2009-2018 Michael Daum http://michaeldaumconsulting.com"}%
+%META:FIELD{name="Copyright" title="Copyright" value="&copy; 2009-2019 Michael Daum http://michaeldaumconsulting.com"}%
 %META:FIELD{name="Description" title="Description" value="%25$SHORTDESCRIPTION%25"}%
 %META:FIELD{name="Home" title="Home" value="Foswiki:Extensions/%TOPIC%"}%
 %META:FIELD{name="License" title="License" value="[[http://www.gnu.org/licenses/gpl.html][GPL (Gnu General Public License)]]"}%
