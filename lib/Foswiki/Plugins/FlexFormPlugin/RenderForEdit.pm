@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2019 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2020 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -32,7 +32,7 @@ sub handle {
   #$this->writeDebug("called ".__PACKAGE__."->handle($theTopic, $theWeb)");
 
   my $thisTopic = $params->{_DEFAULT} || $params->{topic} || $theTopic;
-  my $thisRev = $params->{revision};
+  my $thisRev = $params->{revision} || $params->{rev};
   my $theFields = $params->{field} || $params->{fields};
   my $theForm = $params->{form};
   my $theValue = $params->{value};
@@ -99,7 +99,7 @@ sub handle {
     $theHeader = '' unless defined $theHeader;
     $theFooter = '' unless defined $theFooter;
   }
-  $theMandatory = " <span class='foswikiAlert'>*</span> " unless defined $theMandatory;
+  $theMandatory = "<span class='foswikiAlert'>**</span> " unless defined $theMandatory;
   $theHiddenFormat = '$edit' unless defined $theHiddenFormat;
 
   my $thisWeb = $theWeb;

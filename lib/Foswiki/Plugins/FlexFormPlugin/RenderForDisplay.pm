@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2019 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2020 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -32,7 +32,7 @@ sub handle {
   #$this->writeDebug("called ".__PACKAGE__."->handle($theTopic, $theWeb)");
 
   my $thisTopic = $params->{_DEFAULT} || $params->{topic} || $theTopic;
-  my $thisRev = $params->{revision};
+  my $thisRev = $params->{revision} || $params->{rev};
   my $theFields = $params->{field} || $params->{fields};
   my $theForm = $params->{form};
   my $theFormat = $params->{format};
@@ -65,7 +65,10 @@ sub handle {
       $theFooter = '</table></div>';
       $theFormat = '<tr>
         <th class="foswikiTableFirstCol"> $title: </th>
-        <td class="foswikiFormValue"> $value </td>
+        <td class="foswikiFormValue"> 
+$value
+<!-- -->
+        </td>
       </tr>'
     } 
 
@@ -75,7 +78,8 @@ sub handle {
       $theFooter = '</div>';
       $theFormat = '<div class=\'foswikiFormStep\'>
         <h3> $title </h3>
-        $value
+$value
+<!-- -->
       </div>';
     } 
 
@@ -85,7 +89,7 @@ sub handle {
       $theFooter = '%ENDGRID%</div>';
       $theFormat = '%BEGINCOL{"3" class="foswikiGridHeader"}% <h3 >$title:</h3>
         %BEGINCOL{"9"}%
-        $value$n';
+$value$n';
     }
   }
 
@@ -255,7 +259,6 @@ sub handle {
 
     $fieldValue = $fieldDefault unless defined $fieldValue && $fieldValue ne '';
     next if $theHideEmpty && (!defined($fieldValue) || $fieldValue eq '');
-
     next if $theInclude && $fieldName !~ /$theInclude/;
     next if $theExclude && $fieldName =~ /$theExclude/;
     next if $theIncludeAttr && $fieldAttrs !~ /$theIncludeAttr/;
@@ -285,24 +288,20 @@ sub handle {
     # - patch in (display) value as $value
     # - use raw value as $origvalue
     my $origValue = $fieldValue;
-    $line =~ s/\$value([^\(]|$)/\$value(display)\0$1/g;
 
     $this->translateField($field, $theWeb, $theForm);
 
     # now dive into the core and see what we get out of it
-    $line = $field->renderForDisplay(
-      $line,
-      $fieldValue,
-      {
-        bar => '|',    #  keep bars
-        newline => '$n',    # keep newlines
-        display => 1,
-      }
-    );
+    my $displayValue;
+    if ($field->can("getDisplayValue")) {
+      $displayValue = $field->getDisplayValue($fieldValue, $thisWeb, $thisTopic);
+    } else {
+      $displayValue = $field->renderForDisplay('$value(display)', $fieldValue);
+    }
 
-    $line =~ s/(?:\(display\))?\0//g;
+    next if $theHideEmpty && (!defined($displayValue) || $displayValue eq '');
 
-    # render left-overs by ourselfs
+    # render this by ourselfs
     $line =~ s/\$name\b/$fieldName/g;
     $line =~ s/\$type\b/$fieldType/g;
     $line =~ s/\$size\b/$fieldSize/g;
@@ -311,7 +310,7 @@ sub handle {
     $line =~ s/\$title\b/$fieldTitle/g;
     $line =~ s/\$form\b/$formTitle/g;
     $line =~ s/\$default\b/$fieldDefault/g;
-    $line =~ s/\$value(\(display\))?\b/$fieldValue/g;
+    $line =~ s/\$value(\(display\))?\b/$displayValue/g;
     $line =~ s/\$origvalue\b/$origValue/g;
 
     push @result, $line;
