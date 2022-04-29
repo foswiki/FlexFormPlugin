@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2020 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2022 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -31,7 +31,16 @@ sub handle {
 
   #$this->writeDebug("called ".__PACKAGE__."->handle($theTopic, $theWeb)");
 
-  my $formName = $params->{_DEFAULT} || $params->{form} || $theTopic;
+  my $formName;
+  if ($params->{topic}) {
+    my $thisRev = $params->{revision} || $params->{rev};
+    my ($thisWeb, $thisTopic) = Foswiki::Func::normalizeWebTopicName($theWeb, $params->{topic});
+    my $obj = $this->getTopicObject($thisWeb, $thisTopic, $thisRev);
+    $formName = $obj->getFormName();
+  } else {
+    $formName = $params->{_DEFAULT} || $params->{form} || $theTopic;
+  }
+
   my ($formWeb, $formTopic) = Foswiki::Func::normalizeWebTopicName($theWeb, $formName);
 
   my $theFormat = $params->{format};
@@ -45,6 +54,10 @@ sub handle {
   my $theInclude = $params->{include};
   my $theIncludeAttr = $params->{includeattr};
   my $theExcludeAttr = $params->{excludeattr};
+  my $theIncludeType = $params->{includetype};
+  my $theExcludeType = $params->{excludetype};
+  my $theIgnoreError = Foswiki::Func::isTrue($params->{ignoreerror}, 0);
+  my $theSort = Foswiki::Func::isTrue($params->{sort}, 0);
 
   my $form;
   try {
@@ -52,7 +65,7 @@ sub handle {
   } catch Foswiki::OopsException with {
     # nop
   };
-  return $this->inlineError("can't load form $formWeb.$formTopic") unless $form;
+  return ($theIgnoreError?"":$this->inlineError("can't load form $formWeb.$formTopic")) unless $form;
 
   my @selectedFields = ();
   if ($theFields) {
@@ -64,7 +77,12 @@ sub handle {
       push @selectedFields, $field if $field;
     }
   } else {
-    @selectedFields = @{$form->getFields()};
+    my $fields = $form->getFields();
+    @selectedFields = @$fields if defined $fields;
+  }
+
+  if ($theSort) {
+    @selectedFields = sort {$a->{title} cmp $b->{title}} @selectedFields;
   }
 
   my @result = ();
@@ -74,18 +92,22 @@ sub handle {
     next if defined $theInclude && $field->{name} !~ /$theInclude/;
     next if $theIncludeAttr && $field->{attributes} !~ /$theIncludeAttr/;
     next if $theExcludeAttr && $field->{attributes} =~ /$theExcludeAttr/;
+    next if $theIncludeType && $field->{type} !~ /$theIncludeType/;
+    next if $theExcludeType && $field->{type} =~ /$theExcludeType/;
 
     my $line = $theFormat;
 
     my $defaultValue = $field->getDefaultValue // "";
     my $value = $field->{value} // $defaultValue;
 
+    my $description = $field->{tooltip} // $field->{description} // '';
+
     $line =~ s/\$name/$field->{name}/g;
     $line =~ s/\$title/$field->{title}/g;
     $line =~ s/\$type/$field->{type}/g;
     $line =~ s/\$size/$field->{size}/g;
     $line =~ s/\$attributes/$field->{attributes}/g;
-    $line =~ s/\$(description|tooltip)/$field->{tooltip}/g;
+    $line =~ s/\$(description|tooltip)/$description/g;
     $line =~ s/\$(definingtopic|definingTopic)/$field->{definingTopic}/g;
     $line =~ s/\$default/$defaultValue/g;
     $line =~ s/\$value/$value/g;

@@ -4,6 +4,8 @@
 
 %TOC%
 
+---++ Description
+
 This plugin leverages the internal capabilities to render an interface for %SYSTEMWEB%.DataForms
 and adds insights to the acutal !DataForm definition itself as used internally.
 This API is part of the =Foswiki::Form= and =Foswiki:Form::FieldDefinition= classes of Foswiki
@@ -26,13 +28,15 @@ While %<nop>RENDERFOREDIT% and %<nop>%RENDERFORDISPLAY render forms for the net 
 the %<nop>RENDERFORMDEF= macro renders information about the !DataForm definition itself identpendent of
 any topic actually using it. This may be used to provide more defailed insights into the !DataForm definition.
 
+The %<nop>DISPLAYFIELD% is supposed to be a shortcut for =%<nop>RENDERFORDISPLAY% for a single formfield, similar
+to %<nop>FORMFIELD%. Contrary to %<nop>FORMFIELD% it renders a proper display value based on the type of the formfield,
+whereas %<nop>FORMFIELD% returns the raw data as stored in the topic.
+
 ---++ Usage
 ---+++ RENDERFOREDIT
 | *Parameter* | *Description* | *Default* |
 | "..." or topic="..." | name of a topic to render the edit form for | the base topic of the current url |
-| revision="..." | topic revision which to use the data from while populating the edit form | |
-| excludeattr="..." | regular expression field attributes must match to be excluded from the output | undefined |
-| exclude="..." | regular expression fieldnames must match to be excluded from the output | undefined |
+| revision="..." or rev="..." | topic revision which to use the data from while populating the edit form | |
 | fields="&lt;fieldname1>, &lt;fieldname2>, ..." | list of formfields to render the interface for | all known formfields |
 | prefix="..." | adds a prefix string to the name while rendering the editor for a formfield | |
 | footer="..." | footer string to apped to the output | &lt;empty string> |
@@ -42,8 +46,11 @@ any topic actually using it. This may be used to provide more defailed insights 
 | header="..." | header string to be put in front of the output | &lt;empty string> |
 | hidden="..." | those fields that match this regular expression will be rendered hidden | undefined |
 | hideempty="on/off" | hide empty formfields | off |
+| ignoreerror="on/off" | ignore any inline error | off |
 | includeattr="..." | regular expression field attributes must match to be included in the output | undefined |
+| excludeattr="..." | regular expression field attributes must match to be excluded from the output | undefined |
 | include="..." | regular expression fieldnames must match to be included in the output | undefined |
+| exclude="..." | regular expression fieldnames must match to be excluded from the output | undefined |
 | mandatory="..." | string to be inserted when a field is mandatory | <span class='foswikiAlert'>**</span> |
 | map="&lt;fieldname1>=&lt;title1>, &lt;fieldname2>=&lt;title2>, ..." | allows to map a fieldname to a different title string in the edit interface | original fieldnames are used as title string |
 | separator="..." | string to be put between each formatted output per formfield | &lt;empty string> |
@@ -66,19 +73,24 @@ any topic actually using it. This may be used to provide more defailed insights 
 ---+++ RENDERFORDISPLAY
 | *Parameter* | *Description* | *Default* |
 | "..." or topic="..." | name of a topic to display the form for | the base topic of the current url |
-| revision="..." | topic revision to display | |
+| revision="..." or rev="..." | topic revision to display | |
 | autolink="on/off" | enable/disable !WikiWord autolinking when rendering a formfield; setting =autolink= sets the default for all fields specific settings of =&lt;fieldname>_autolink=which can, that is you can disable autolinking globally and switch it back on per field | on |
-| excludeattr="..." | regular expression field attributes must match to be excluded from the output | undefined |
-| exclude="..." | regular expression fieldnames must match to be excluded from the output | undefined |
+| editable="on/off" | enable/disable inline editing, given the current user has got access rights on the target topic | off |
+| editicon="..." | font-awesome class of the icon displayed when hovering over an inline editor | fa-pencil |
 | fields="&lt;fieldname1>, &lt;fieldname2>, ..." | list of formfields to be displayed | all known formfields |
 | footer="..." | footer string to apped to the output | &lt;empty string> |
 | type="div/table/grid" | specify the layout to be used in case no format is specified manually (using header,format,separator and footer parameters); grid is only available when Foswiki:Extensions/GridLayoutPlugin is installed | table |
-| format="..." | format string to render each formfield with, more info below | =$edit$mandatory= |
+| format="..." | format string to render each formfield with, more info below |  |
 | form="..." | topic name containing the !DataForm definition | form found at the base topic |
 | header="..." | header string to be put in front of the output | &lt;empty string> |
 | hideempty="on/off" | hide empty formfields | off |
+| ignoreerror="on/off" | ignore any inline error | off |
 | includeattr="..." | regular expression field attributes must match to be included in the output | undefined |
+| excludeattr="..." | regular expression field attributes must match to be excluded from the output | undefined |
+| includevalue="..." | regular expression field value must match to be included in the output | undefined |
+| excludevalue="..." | regular expression field value must match to be excluded in the output | undefined |
 | include="..." | regular expression fieldnames must match to be included in the output | undefined |
+| exclude="..." | regular expression fieldnames must match to be excluded from the output | undefined |
 | labelformat="..." | format string used for labels exclusively; labels aren't real input fields; they are part of the form definition but carry read-only values only if at all  | same as =format= |
 | map="&lt;fieldname1>=&lt;title1>, &lt;fieldname2>=&lt;title2>, ..." | allows to map a fieldname to a different title string (*deprecated*: please use &lt;fieldname>_title to redefine the title) | original fieldnames are used as title string |
 | separator="..." | string to be put between each formatted output per formfield | &lt;empty string> |
@@ -107,6 +119,7 @@ The =format= parameter may contain the following variables:
    * =$extra=: the "extra" return value of the =Foswiki::Form::renderForEdit()= call
    * =$mandatory=: placeholder to display the =mandatory= flag when a formfield is mandatory; the format of the mandatroy flag can be defined in the =mandatory= parameter to RENDERFOREDIT
    * =$name=: the original fieldname
+   * =$inlineEditor: expands to =inlineEditor= if the current user has got access rights on the target topic
    * =$size=: size parameter of the formfield as given in the !DataForm definition
    * =$title=: the fieldtitle derived from the fieldname and remapped as specified in the =map= parameter
    * =$tooltip=: formfield description in !DataForm (*deprecated*: use =$description= instead)
@@ -117,16 +130,32 @@ The =format= parameter may contain the following variables:
    * =$origvalues=: list of all allowed values; for =+value= formfields this is the original _unmapped_ value of the formfield
    * =$default=: this is the default value if no value is specified in the topic itself
 
+---+++ DISPLAYFIELD
+
+| *Parameter* | *Description* | *Default* |
+| "..." or field="..." | name of the field to display | |
+| topic="..." | topic to display the field for | current topic |
+| default="..." | default value if the field isn't defined | _empty string_ |
+| editable="on/off" | enable/disable inline editing | off |
+| format="..." | format for the field (see RENDERFORDISPLAY) | =$value= | 
+| revision="..." or rev="..." | topic revision to display | |
+| hideempty="on/off" | hide empty formfields | off |
+
 ---+++ RENDERFORMDEF
 
 | *Parameter* | *Description* | *Default* |
 | "..." or form="..." | the topic holding the !DataForm definition | current topic |
+| topic="..." | the topic with a !DataForm attached to it | current topic |
 | field="..." or fields="..." | a comma separated list of fields to render information about | all fields |
+| ignoreerror="on/off" | ignore any inline error | off |
 | include="..." | regular expression a field name must match to be listed | |
 | includeattr="..." | regular expression field attributes must match to be included in the output | undefined |
+| includetype="..." | regular expression field type must match to be included in the output | undefined |
 | exclude="..." | regular expression a field name must not match to be listed | |
 | excludeattr="..." | regular expression field attributes must match to be excluded from the output | undefined |
+| excludetype="..." | regular expression field type must match to be excluded from the output | undefined |
 | header | header string prepended to the result | |
+| sort="on/off" | sort formfields by title; by default they are processed in the order given by the !DataForm definition | off |
 | format | format string for each field to be rendered in the result | |
 | separator | separator between lines when field information is rendered | |
 | footer | footer string appended to the result | |
@@ -158,6 +187,80 @@ However tables don't behave responsive on mobile devices. A =div= based layout s
 thus using more screen space for the benefit of being well readable on mobile devices as well. The =grid= layout covers a middle ground
 between both: it looks like =table= layout on wide screens but will collaps columns into a stack as form elements fit better vertically
 than horizontal on mobile devices.
+
+---++ Inline editor
+
+The =%RENDERFORDISPLAY= macro allows to activate inline editing of individual formfields using the =editable= switch
+given the current user has got change access rights. The inline editor is activated by clicking on the edit icon being displayed
+while hovering over a formfield being rendered, or by double-clicking it. This will swap in the formfield's editor. Once finished
+the formfield view will be rendered again. 
+
+Technically speaking, an edit widget for the formfield will be fetched from a jsonrpc template backend (using RenderPlugin) thus bringing in 
+not only the required html markup but also any js and css to properly intialize the editor. The actuall rendering process is performed
+by the =inlineedit.tmpl= template using a =%RENDERFOREDIT=.  Once the edit has been finished, the original view is reestablished
+likewise. Note that an edit lock is acquired and released the same way a normal non-inline edit would do.
+
+Inline editing will be enabled automatically per formfield unless
+output is customized using the =header=, =footer=, =separator= and =format= parameters. There are a few things to consider to bring
+in inline editing to a custom output. The following example illustrates the required markup to provide the required hints to the inline editor:
+
+<verbatim class="tml">
+%RENDERFORDISPLAY{
+  editable="on"
+  header="<table class='inlineEditor'>"
+  format="<tr>
+            <th>$title:</th>
+            <td class='inlineEditValue' data-formfield='$name'>$value $editicon</td>
+          </tr>
+  separator="$n"
+  footer="</table>"
+}%
+</verbatim>
+
+   1 the inline editor is activated on the container elemenent using the =inlineEditor= css class
+   1 the container of the actual formfield value must be identified using the =inlineEditvalue= css class
+   1 the formfield container requires an HTML5 data property =data-formfield= holding the name of the formfield to be editable
+   1 an =$editicon= variable indicates the position where the edit icon is supposed to be located
+
+Note that multiple instances of =%RENDERFORDISPLAY= can be covered by a single inline editor:
+
+<verbatim class="tml">
+<div class='foswikiPageForm inlineEditor'>
+...
+%RENDERFORDISPLAY{
+  editable="on"
+  topic="JohnDoe"
+  fields="FirstName, MiddleName, LastName"
+  header="<table>"
+  format="<tr>
+            <th>$title:</th>
+            <td class='inlineEditValue' data-formfield='$name' data-topic='$web.$topic'>$value $editicon</td>
+          </tr>
+  separator="$n"
+  footer="</table>"
+}%
+...
+%RENDERFORDISPLAY{
+  editable="on"
+  topic="JohnDoesAddress"
+  fields="Address, PostalCode, Cirty, Country"
+  header="<table>"
+  format="<tr>
+            <th>$title:</th>
+            <td class='inlineEditValue' data-formfield='$name' data-topic='$web.$topic'>$value $editicon</td>
+          </tr>
+  separator="$n"
+  footer="</table>"
+}%
+...
+</div>
+</verbatim>
+
+This also illustrates how to edit formfields of different topics in one inline editor interface.
+
+   1 the macro uses a =topic="..."= parameter
+   1 the formfield value container has got an extra HTML5 property =data-topic= to provide the actual target topic being edited
+
 
 ---++ Examples
 
@@ -199,6 +302,10 @@ than horizontal on mobile devices.
 
 ---++ Change History
 %TABLE{columnwidths="7em" tablewidth="100%"}%
+|  29 Apr 2022: | added =includevalue= and =excludevalue= to RENDERFORDISPLAY |
+|  22 Feb 2022: | added inline editor feature to RENDERFORDISPLAY |
+|  25 Jan 2022: | fixed =$description= in RENDERFORMDEF |
+|  25 Aug 2021: | added DISPLAYFIELD | 
 |  27 Oct 2020: | render tml from formfields properly |
 |  12 Nov 2019: | normalize web parameter before caching topic objects |
 |  04 Jul 2018: | added =type= parameter to RENDERFORDISPLAY and RENDERFOREDIT |
@@ -248,7 +355,7 @@ than horizontal on mobile devices.
 
 %META:FORM{name="PackageForm"}%
 %META:FIELD{name="Author" title="Author" value="Foswiki:MichaelDaum"}%
-%META:FIELD{name="Copyright" title="Copyright" value="&copy; 2009-2020 Michael Daum"}%
+%META:FIELD{name="Copyright" title="Copyright" value="&copy; 2009-2022 Michael Daum"}%
 %META:FIELD{name="Description" title="Description" value="%25$SHORTDESCRIPTION%25"}%
 %META:FIELD{name="Home" title="Home" value="Foswiki:Extensions/%TOPIC%"}%
 %META:FIELD{name="License" title="License" value="[[http://www.gnu.org/licenses/gpl.html][GPL (Gnu General Public License)]]"}%

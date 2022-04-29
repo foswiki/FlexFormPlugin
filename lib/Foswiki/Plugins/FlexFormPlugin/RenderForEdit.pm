@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2020 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2022 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -52,6 +52,14 @@ sub handle {
   my $theSort = Foswiki::Func::isTrue($params->{sort}, 0);
   my $thePrefix = $params->{prefix};
   my $theHideEmpty = Foswiki::Func::isTrue($params->{hideempty}, 0);
+  my $theIgnoreError = Foswiki::Func::isTrue($params->{ignoreerror}, 0);
+  my %typeMapping = ();
+
+  foreach my $item (split(/\s*,\s*/, $params->{typemapping} || '')) {
+    if ($item =~ /^(.*)=(.*)$/) {
+      $typeMapping{$1} = $2;
+    }
+  }
 
   # get defaults from template
   my $theType = $params->{type} || '';
@@ -131,7 +139,7 @@ sub handle {
   } catch Foswiki::OopsException with {
     # nop
   };
-  return $this->inlineError("can't load form $theFormWeb.$theForm") unless $form;
+  return ($theIgnoreError?"":$this->inlineError("can't load form $theFormWeb.$theForm")) unless $form;
 
   my $fieldTitles;
   foreach my $map (split(/\s*,\s*/, $theMap)) {
@@ -152,7 +160,8 @@ sub handle {
       push @selectedFields, $field if $field;
     }
   } else {
-    @selectedFields = @{$form->getFields()};
+    my $fields = $form->getFields();
+    @selectedFields = @$fields if defined $fields;
   }
 
   my @result = ();
@@ -178,7 +187,7 @@ sub handle {
     # get the list of all allowed values
     my $fieldAllowedValues = '';
     # CAUTION: don't use field->getOptions() on a +values field as that won't return the full valueMap...only the value part, but not the title map
-    if ($field->can('getOptions') && $field->{type} !~ /\+values/) {
+    if ($field->can('getOptions') && $field->{type} !~ /(\+values|topic|user)/) {
       my $options = $field->getOptions();
       if ($options) {
         $fieldAllowedValues = join($theValueSep, @$options);
@@ -212,25 +221,27 @@ sub handle {
       $fieldDefault = $field->getDefaultValue() || '';
     }
 
-    $fieldSize = $params->{$fieldName . '_size'} if defined $params->{$fieldName . '_size'};
+    $fieldSize = $params->{$fieldName . '_size'} if $params->{$fieldName . '_size'} && $params->{$fieldName . '_size'} ne "";
+    $fieldType = $params->{$fieldName . '_type'} if $params->{$fieldName . '_type'} && $params->{$fieldName . '_type'} ne "";
+    $fieldType = $typeMapping{$fieldType} if defined $typeMapping{$fieldType};
+
     $fieldAttrs = $params->{$fieldName . '_attributes'} if defined $params->{$fieldName . '_attributes'};
     $fieldDescription = $params->{$fieldName . '_tooltip'} if defined $params->{$fieldName . '_tooltip'};
     $fieldDescription = $params->{$fieldName . '_description'} if defined $params->{$fieldName . '_description'};
     $fieldTitle = $params->{$fieldName . '_title'} if defined $params->{$fieldName . '_title'};    # see also map
     $fieldAllowedValues = $params->{$fieldName . '_values'} if defined $params->{$fieldName . '_values'};
     $fieldDefault = $params->{$fieldName . '_default'} if defined $params->{$fieldName . '_default'};
-    $fieldType = $params->{$fieldName . '_type'} if defined $params->{$fieldName . '_type'};
 
     my $fieldSort = Foswiki::Func::isTrue($params->{$fieldName . '_sort'}, $theSort);
     $fieldAllowedValues = $this->sortValues($fieldAllowedValues, $fieldSort) if $fieldSort;
 
     my $fieldFormat = $params->{$fieldName . '_format'} || $theFormat;
-
     # temporarily remap field to another type
     my $fieldClone;
-    if ( defined($params->{$fieldName . '_type'})
-      || defined($params->{$fieldName . '_size'})
+    if ( $fieldType ne $field->{type}
+      || $params->{$fieldName . '_size'}
       || defined($params->{$fieldName . '_name'})
+      || defined($params->{$fieldName . '_values'})
       || $fieldSort)
     {
       $fieldClone = $form->createField(

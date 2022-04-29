@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2020 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2022 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,6 +22,7 @@ use Foswiki::Func();
 use Foswiki::Form();
 use Foswiki::OopsException();
 use Error qw( :try );
+use Foswiki::Plugins::JQueryPlugin ();
 
 use Foswiki::Plugins::FlexFormPlugin::Base();
 our @ISA = qw( Foswiki::Plugins::FlexFormPlugin::Base );
@@ -44,70 +45,40 @@ sub handle {
   my $theExclude = $params->{exclude};
   my $theIncludeAttr = $params->{includeattr};
   my $theExcludeAttr = $params->{excludeattr};
+  my $theIncludeValue = $params->{includevalue};
+  my $theExcludeValue = $params->{excludevalue};
   my $theMap = $params->{map} || '';
   my $theLabelFormat = $params->{labelformat} || '';
   my $theAutolink = Foswiki::Func::isTrue($params->{autolink}, 1);
   my $theSort = Foswiki::Func::isTrue($params->{sort}, 0);
   my $theHideEmpty = Foswiki::Func::isTrue($params->{hideempty}, 0);
+  my $theIgnoreError = Foswiki::Func::isTrue($params->{ignoreerror}, 0);
+  my $theEditIcon = $params->{editicon} // 'fa-pencil';
+  my %typeMapping = ();
 
-  $theExcludeAttr = '\bh\b' unless defined $theExcludeAttr;
-
-  # get defaults from template
-  my $theType = $params->{type} || '';
-  $theType = 'div' if !Foswiki::Func::getContext()->{GridLayoutPluginEnabled} && $theType eq 'grid';
-  $theType = 'table' unless $theType =~ /^(div|table|grid)$/;
-
-  if (!defined($theFormat) && !defined($theHeader) && !defined($theFooter)) {
-
-    # table
-    if ($theType eq '' || $theType eq 'table') { 
-      $theHeader = '<div class=\'foswikiFormSteps\'><table class=\'foswikiLayoutTable\'>';
-      $theFooter = '</table></div>';
-      $theFormat = '<tr>
-        <th class="foswikiTableFirstCol"> $title: </th>
-        <td class="foswikiFormValue"> 
-$value
-<!-- -->
-        </td>
-      </tr>'
-    } 
-
-    # div
-    elsif ($theType eq 'div') { 
-      $theHeader = '<div class=\'foswikiFormSteps\'>';
-      $theFooter = '</div>';
-      $theFormat = '<div class=\'foswikiFormStep\'>
-        <h3> $title </h3>
-$value
-<!-- -->
-      </div>';
-    } 
-
-    # grid
-    elsif (Foswiki::Func::getContext()->{GridLayoutPluginEnabled} && $theType eq 'grid') {
-      $theHeader = '<div class=\'foswikiPageForm foswikiGridForm\'>%BEGINGRID{gutter="1"}%';
-      $theFooter = '%ENDGRID%</div>';
-      $theFormat = '%BEGINCOL{"3" class="foswikiGridHeader"}% <h3 >$title:</h3>
-        %BEGINCOL{"9"}%
-$value$n';
+  foreach my $item (split(/\s*,\s*/, $params->{typemapping} || '')) {
+    if ($item =~ /^(.*)=(.*)$/) {
+      $typeMapping{$1} = $2;
     }
   }
 
-  $theHeader ||= '';
-  $theFooter ||= '';
-  $theFormat ||= '';
+  $theExcludeAttr = '\bh\b' unless defined $theExcludeAttr;
 
-  # make it compatible
-  $theHeader =~ s/%A_TITLE%/\$title/g;
-  $theFormat =~ s/%A_TITLE%/\$title/g;
-  $theFormat =~ s/%A_VALUE%/\$value/g;
-  $theFooter =~ s/%A_TITLE%/\$title/g;
-  $theLabelFormat =~ s/%A_TITLE%/\$title/g;
-  $theLabelFormat =~ s/%A_VALUE%/\$value/g;
-
+  # get topic and form
   my $thisWeb = $theWeb;
   ($thisWeb, $thisTopic) = Foswiki::Func::normalizeWebTopicName($thisWeb, $thisTopic);
   my $topicObj = $this->getTopicObject($thisWeb, $thisTopic, $thisRev);
+
+  my $theEditable = Foswiki::Func::isTrue($params->{editable}, 0);
+  $theEditable = 0 if $theEditable && !$topicObj->haveAccess("change");
+
+  my $editIcon = '';
+  my $inlineEditorClass = '';
+  if ($theEditable) {
+    Foswiki::Plugins::JQueryPlugin::createPlugin("InlineEditor");
+    $editIcon = '<a class="inlineEditButton">%JQICON{"'.$theEditIcon.'"}%</a>';
+    $inlineEditorClass = 'inlineEditor';
+  }
 
   $theForm = $this->{session}{request}->param('formtemplate') unless $theForm;
   $theForm = $topicObj->getFormName unless $theForm;
@@ -126,7 +97,105 @@ $value$n';
   } catch Foswiki::OopsException with {
     # nop
   };
-  return $this->inlineError("can't load form $theFormWeb.$theForm") unless $form;
+  return ($theIgnoreError?"":$this->inlineError("can't load form $theFormWeb.$theForm")) unless $form;
+
+  # get defaults from template
+  my $theType = $params->{type} || '';
+  $theType = 'div' if !Foswiki::Func::getContext()->{GridLayoutPluginEnabled} && $theType eq 'grid';
+  $theType = 'table' unless $theType =~ /^(div|table|grid)$/;
+
+  if (!defined($theFormat) && !defined($theHeader) && !defined($theFooter)) {
+
+    # table
+    if ($theType eq '' || $theType eq 'table') { 
+      $theFooter = '</table></div>';
+      if ($theEditable) {
+        $theHeader = "<div class='foswikiFormSteps \$inlineEditor' data-topic='\$topic'><table class='foswikiLayoutTable'>";
+        $theFormat = <<'HERE';
+<tr>
+          <th class="foswikiTableFirstCol"> $title: </th>
+          <td class="foswikiFormValue inlineEditValue" data-formfield="$name""> 
+$value <!-- -->
+$editicon
+        </td>
+      </tr>
+HERE
+      } else {
+        $theHeader = "<div class='foswikiFormSteps'><table class='foswikiLayoutTable'>";
+        $theFormat = <<'HERE';
+<tr>
+          <th class="foswikiTableFirstCol"> $title: </th>
+          <td class="foswikiFormValue"> 
+$value <!-- -->
+        </td>
+      </tr>
+HERE
+      }
+    } 
+
+    # div
+    elsif ($theType eq 'div') { 
+      $theFooter = '</div>';
+      if ($theEditable) {
+        $theHeader = "<div class='foswikiFormSteps \$inlineEditor' data-topic='\$topic'>";
+        $theFormat = <<'HERE';
+<div class='foswikiFormStep'>
+  <h3> $title </h3>
+  <div class='inlineEditValue' data-formfield='$name'>
+$value <!-- -->
+$editicon
+  </div>
+</div>
+HERE
+      } else {
+        $theHeader = "<div class='foswikiFormSteps'>";
+        $theFormat = <<'HERE';
+<div class='foswikiFormStep'>
+<h3> $title </h3>
+$value <!-- -->
+</div>
+HERE
+      }
+    } 
+
+    # grid
+    elsif (Foswiki::Func::getContext()->{GridLayoutPluginEnabled} && $theType eq 'grid') {
+      $theFooter = '%ENDGRID%</div>';
+      if ($theEditable) {
+        $theHeader = '<div class="foswikiPageForm foswikiGridForm $inlineEditor" data-topic="$topic">%BEGINGRID{gutter="1"}%';
+        $theFormat = <<'HERE';
+%BEGINCOL{"3" class="foswikiGridHeader"}% 
+<h3 >$title:</h3>
+%BEGINCOL{"9"}%
+<div class='inlineEditValue' data-formfield='$name'>
+$value <!-- -->
+$editicon
+</div>
+HERE
+      } else {
+        $theHeader = '<div class="foswikiPageForm foswikiGridForm">%BEGINGRID{gutter="1"}%';
+        $theFormat = <<'HERE';
+%BEGINCOL{"3" class="foswikiGridHeader"}% 
+<h3 >$title:</h3>
+%BEGINCOL{"9"}%
+$value
+HERE
+      }
+    }
+  }
+
+  $theHeader ||= '';
+  $theFooter ||= '';
+  $theFormat ||= '';
+
+  # make it compatible
+  $theHeader =~ s/%A_TITLE%/\$title/g;
+  $theFormat =~ s/%A_TITLE%/\$title/g;
+  $theFormat =~ s/%A_VALUE%/\$value/g;
+  $theFooter =~ s/%A_TITLE%/\$title/g;
+  $theLabelFormat =~ s/%A_TITLE%/\$title/g;
+  $theLabelFormat =~ s/%A_VALUE%/\$value/g;
+
 
   my $formTitle;
   if ($form->can('getPath')) {
@@ -158,7 +227,8 @@ $value$n';
       push @selectedFields, $field if $field;
     }
   } else {
-    @selectedFields = @{$form->getFields()};
+    my $fields = $form->getFields();
+    @selectedFields = @$fields if defined $fields;
   }
 
   my @result = ();
@@ -207,7 +277,7 @@ $value$n';
     # get the default value
     my $fieldDefault = '';
     if ($field->can('getDefaultValue')) {
-      $fieldDefault = $field->getDefaultValue() || '';
+      $fieldDefault = $field->getDefaultValue() // '';
     }
 
     my $metaField = $topicObj->get('FIELD', $fieldName);
@@ -226,7 +296,18 @@ $value$n';
     $fieldAllowedValues = $params->{$fieldName . '_values'} if defined $params->{$fieldName . '_values'};
     $fieldDefault = $params->{$fieldName . '_default'} if defined $params->{$fieldName . '_default'};
     $fieldType = $params->{$fieldName . '_type'} if defined $params->{$fieldName . '_type'};
+    $fieldType = $typeMapping{$fieldType} if defined $typeMapping{$fieldType};
     $fieldValue = $params->{$fieldName . '_value'} if defined $params->{$fieldName . '_value'};
+
+    $fieldValue = $fieldDefault unless defined $fieldValue && $fieldValue ne '';
+    next if $theHideEmpty && (!defined($fieldValue) || $fieldValue eq '');
+
+    next if $theIncludeValue && $fieldValue !~ /$theIncludeValue/i;
+    next if $theExcludeValue && $fieldValue =~ /$theExcludeValue/i;
+    next if $theInclude && $fieldName !~ /$theInclude/;
+    next if $theExclude && $fieldName =~ /$theExclude/;
+    next if $theIncludeAttr && $fieldAttrs !~ /$theIncludeAttr/i;
+    next if $theExcludeAttr && $fieldAttrs =~ /$theExcludeAttr/i;
 
     my $fieldAutolink = Foswiki::Func::isTrue($params->{$fieldName . '_autolink'}, $theAutolink);
 
@@ -237,13 +318,16 @@ $value$n';
 
     # temporarily remap field to another type
     my $fieldClone;
-    if ( defined($params->{$fieldName . '_type'})
+    if ( $fieldType ne $field->{type}
+      || $params->{$fieldName . '_size'}
       || defined($params->{$fieldName . '_size'})
+      || defined($params->{$fieldName . '_name'})
+      || defined($params->{$fieldName . '_values'})
       || $fieldSort)
     {
       $fieldClone = $form->createField(
         $fieldType,
-        name => $fieldName,
+        name => $params->{$fieldName . '_name'} || $fieldName,
         title => $fieldTitle,
         size => $fieldSize,
         value => $fieldAllowedValues,
@@ -256,13 +340,6 @@ $value$n';
       );
       $field = $fieldClone;
     }
-
-    $fieldValue = $fieldDefault unless defined $fieldValue && $fieldValue ne '';
-    next if $theHideEmpty && (!defined($fieldValue) || $fieldValue eq '');
-    next if $theInclude && $fieldName !~ /$theInclude/;
-    next if $theExclude && $fieldName =~ /$theExclude/;
-    next if $theIncludeAttr && $fieldAttrs !~ /$theIncludeAttr/;
-    next if $theExcludeAttr && $fieldAttrs =~ /$theExcludeAttr/;
 
     my $line = $fieldFormat;
     unless ($fieldName) {    # label
@@ -322,6 +399,9 @@ $value$n';
   return '' if $theHideEmpty && !@result;
 
   my $result = $theHeader . join($theSep, @result) . $theFooter;
+  $result =~ s/\$topic\b/$thisWeb.$thisTopic/g;
+  $result =~ s/\$editicon\b/$editIcon/g;
+  $result =~ s/\$inlineEditor\b/$inlineEditorClass/g;
   $result =~ s/\$nop//g;
   $result =~ s/\$n/\n/g;
   $result =~ s/\$perce?nt/%/g;

@@ -1,0 +1,47 @@
+%TMPL:DEF{"renderForDisplay"}%%RENDERFORDISPLAY{
+  editable="on"
+  form="%URLPARAM{"form"}%"
+  typemapping="%URLPARAM{"typemapping"}%"
+  field="%URLPARAM{"formfield" default="NoSuchThing"}%"
+  %IF{"$'URLPARAM{value}'"
+    then="value=\"%URLPARAM{"value"}%\""
+  }%
+  format="%TMPL:P{"renderForDisplay::format"}%"
+}%%TMPL:END%
+
+%TMPL:DEF{"renderForDisplay::format"}%$value $editicon%TMPL:END%
+
+%TMPL:DEF{"renderForEdit"}%%IF{"'%WEB%.%TOPIC%' allows 'change'"
+  then="$percntTMPL:P{\"renderForEdit::impl\"
+          form=\"%URLPARAM{"form"}%\"
+          typemapping=\"%URLPARAM{"typemapping"}%\"
+          formfield=\"%URLPARAM{"formfield" default="NoSuchThing"}%\"
+          value=\"%URLPARAM{"value"}%\"
+          size=\"%URLPARAM{"size"}%\"
+          type=\"%URLPARAM{"type"}%\"
+          format=\"%TMPL:P{"renderForEdit::format"}%\"
+        }$percnt"
+  else="$percntTMPL:P{\"renderAccessDenied\"}$percnt"
+}%%TMPL:END%
+
+%TMPL:DEF{"renderForEdit::impl"}%%RENDERFOREDIT{
+  form="%form%"
+  field="%formfield%"
+  %IF{"'%value%'!=''"
+    then="%formfield%_value=\"%value%\""
+  }%
+  typemapping="%typemapping%"
+  header="<form class='jqValidate' action='%SCRIPTURLPATH{"jsonrpc"}%/FlexFormPlugin/save' method='post'>
+            <input type='hidden' name='topic' value='%WEB%.%TOPIC%' />"
+  format="%format%"
+  footer="<div class='inlineEditButtonBox'>
+            <button type='submit' class='inlineEditSubmit'>%JQICON{"fa-check"}%</button>
+            <button type='button' class='inlineEditCancel'>%JQICON{"fa-times"}%</button>
+           </div></form>"
+  %formfield%_size="%size%"
+  %formfield%_type="%type%"
+}%%JQREQUIRE{"ajaxform, validate"}%%TMPL:END%
+
+%TMPL:DEF{"renderForEdit::format"}%$edit <div class='foswikiFormDescription'>$description</div>%TMPL:END%
+
+%TMPL:DEF{"renderAccessDenied"}%%TMPL:P{"renderForDisplay"}%<div class='foswikiAlert'>%TRANSLATE{"access denied"}%</div>%TMPL:END%

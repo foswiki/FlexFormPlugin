@@ -1,3 +1,4 @@
+*.jslint
 *.gz
 *.swp
 /FlexFormPlugin.md5
@@ -7,3 +8,5 @@
 /FlexFormPlugin.zip
 /FlexFormPlugin_installer
 /FlexFormPlugin_installer.pl
+pub/System/FlexFormPlugin/inlineEditor.css
+pub/System/FlexFormPlugin/inlineEditor.js

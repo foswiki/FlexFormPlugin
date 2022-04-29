@@ -2,7 +2,16 @@
 data/System/FlexFormPlugin.txt 0644
 lib/Foswiki/Plugins/FlexFormPlugin/Base.pm 0644
 lib/Foswiki/Plugins/FlexFormPlugin/DEPENDENCIES 0644
+lib/Foswiki/Plugins/FlexFormPlugin/InlineEditor.pm 0644
 lib/Foswiki/Plugins/FlexFormPlugin.pm 0644
 lib/Foswiki/Plugins/FlexFormPlugin/RenderForDisplay.pm 0644
 lib/Foswiki/Plugins/FlexFormPlugin/RenderForEdit.pm 0644
 lib/Foswiki/Plugins/FlexFormPlugin/RenderFormDef.pm 0644
+pub/System/FlexFormPlugin/inlineEditor.css 0644
+pub/System/FlexFormPlugin/inlineEditor.css.gz 0644
+pub/System/FlexFormPlugin/inlineEditor.js 0644
+pub/System/FlexFormPlugin/inlineEditor.js.gz 0644
+pub/System/FlexFormPlugin/inlineEditor.uncompressed.css 0644
+pub/System/FlexFormPlugin/inlineEditor.uncompressed.js 0644
+pub/System/FlexFormPlugin/Makefile 0644
+templates/inlineedit.tmpl 0644

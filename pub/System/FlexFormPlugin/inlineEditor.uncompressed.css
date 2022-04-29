@@ -1,0 +1,72 @@
+.inlineEditor form,
+.inlineEditor form .natedit,
+.inlineEditor form .jqMultiTextContainer input[type=text],
+.inlineEditor form .select2-container,
+.inlineEditor form .jqSliderContainer {
+   width:100% !important;
+}
+.inlineEditor textarea,
+.inlineEditor form input[type=password],
+.inlineEditor form input[type=text] {
+  max-width:100%;
+}
+.inlineEditValue {
+  position:relative;
+  cursor:pointer;
+}
+.inlineEditButton {
+  opacity:0;
+  padding:0 0.5em;
+  transition: opacity 250ms 150ms;
+  position:absolute;
+}
+.inlineAbsolute {
+  position:absolute;
+  top:0;
+  right:-30px;
+}
+
+.inlineEditActive .inlineEditButton {
+  display:none;
+}
+.inlineEditValueContainer:hover .inlineEditButton {
+   opacity:1;
+}
+.inlineEditButtonBox button {
+   margin:0.5em 0.5em 0.5em 0;
+}
+.inlineEditSubmit .foswikiIcon {
+   color:var(--color-green, #5A9B51);
+}
+.inlineEditCancel .foswikiIcon {
+   color:var(--color-red, #F95253);
+}
+
+/* form tweaks */
+.inlineEditActive .foswikiFormDescription {
+  margin:0;
+}
+
+.inlineEditor th {
+  white-space:nowrap;
+}
+td.inlineEditActive {
+  width:100%;
+}
+.inlineEditActive .foswikiRadioButtonGroup {
+  column-count:unset !important;
+}
+.inlineEditActive .foswikiCheckboxGroup,
+.inlineEditActive .foswikiRadioButtonGroup {
+  max-height:calc(8em * var(--line-height));
+  overflow-y:auto;
+}
+.inlineEditActive .foswikiCheckboxGroup tr,
+.inlineEditActive .foswikiCheckboxGroup td,
+.inlineEditActive .foswikiCheckboxGroup tr,
+.inlineEditActive .foswikiRadioButtonGroup td {
+  display:block;
+}
+.inlineEditActive label {
+  white-space:nowrap;
+}

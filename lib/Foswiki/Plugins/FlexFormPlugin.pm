@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 # 
-# Copyright (C) 2009-2020 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2022 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,10 +18,14 @@ package Foswiki::Plugins::FlexFormPlugin;
 use strict;
 use warnings;
 
-our $VERSION = '6.10';
-our $RELEASE = '27 Oct 2020';
+use Foswiki::Func ();
+use Foswiki::Plugins::JQueryPlugin ();
+
+our $VERSION = '8.10';
+our $RELEASE = '29 Apr 2022';
 our $SHORTDESCRIPTION = 'Flexible way to render <nop>DataForms';
 our $NO_PREFS_IN_TOPIC = 1;
+
 our $renderForEditInstance;
 our $renderForDisplayInstance;
 our $renderFormDefInstance;
@@ -31,6 +35,24 @@ sub initPlugin {
   Foswiki::Func::registerTagHandler('RENDERFOREDIT', \&renderForEdit);
   Foswiki::Func::registerTagHandler('RENDERFORDISPLAY', \&renderForDisplay);
   Foswiki::Func::registerTagHandler('RENDERFORMDEF', \&renderFormDef);
+  Foswiki::Func::registerTagHandler('DISPLAYFIELD', \&displayField);
+
+  Foswiki::Plugins::JQueryPlugin::registerPlugin('InlineEditor', 'Foswiki::Plugins::FlexFormPlugin::InlineEditor');
+
+  Foswiki::Contrib::JsonRpcContrib::registerMethod("FlexFormPlugin", "save", sub {
+    my $inlineEditor = Foswiki::Plugins::JQueryPlugin::createPlugin("InlineEditor");
+    return $inlineEditor->jsonRpcSave(@_);
+  });
+
+  Foswiki::Contrib::JsonRpcContrib::registerMethod("FlexFormPlugin", "lock", sub {
+    my $inlineEditor = Foswiki::Plugins::JQueryPlugin::createPlugin("InlineEditor");
+    return $inlineEditor->jsonRpcLockTopic(@_);
+  });
+
+  Foswiki::Contrib::JsonRpcContrib::registerMethod("FlexFormPlugin", "unlock", sub {
+    my $inlineEditor = Foswiki::Plugins::JQueryPlugin::createPlugin("InlineEditor");
+    return $inlineEditor->jsonRpcUnlockTopic(@_);
+  });
 
   return 1;
 }
@@ -57,6 +79,32 @@ sub renderForDisplay {
   return $renderForDisplayInstance->handle(@_);
 }
 
+sub displayField {
+  my ($session, $theParams, $theTopic, $theWeb) = @_;
+
+  my %params = ();
+
+  $params{field} = $theParams->{_DEFAULT} // $theParams->{field};
+  return "" unless defined $params{field};
+
+  $params{topic} = $theParams->{topic} // $theTopic;
+  $params{$params{field} . "_default"} = $theParams->{default} // "";
+  $params{$params{field} . "_attributes"} = $theParams->{attributes} // "";
+  $params{rev} = $theParams->{revision} || $theParams->{rev};
+  $params{hideempty} = $theParams->{hideempty} // 'off';
+  $params{editable} = $theParams->{editable} // 'off';
+
+  unless (defined $params{format}) {
+    if (Foswiki::Func::isTrue($params{editable})) {
+      $params{format} = '<span class="inlineEditor"><span class="inlineEditValue" data-formfield="$name">$n$value $editicon</span></span>';
+    } else {
+      $params{format} = '$value';
+    }
+  }
+
+  return renderForDisplay($session, \%params, $theTopic, $theWeb);
+}
+
 sub renderFormDef {
   my $session = shift;
 
@@ -77,9 +125,9 @@ sub finishPlugin {
   $renderForEditInstance = undef;
   $renderForDisplayInstance = undef;
   $renderFormDefInstance = undef;
-
 }
 
+# SMELL: why is this located here???
 sub completePageHandler {
   $_[0] =~ s/<\/?literal>//g;
 }
