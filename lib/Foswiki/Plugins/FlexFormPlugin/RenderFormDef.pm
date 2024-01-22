@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2022 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2024 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -33,7 +33,8 @@ sub handle {
 
   my $formName;
   if ($params->{topic}) {
-    my $thisRev = $params->{revision} || $params->{rev};
+    my $request = Foswiki::Func::getRequestObject();
+    my $thisRev = $params->{revision} // $params->{rev} // $request->param("rev");
     my ($thisWeb, $thisTopic) = Foswiki::Func::normalizeWebTopicName($theWeb, $params->{topic});
     my $obj = $this->getTopicObject($thisWeb, $thisTopic, $thisRev);
     $formName = $obj->getFormName();

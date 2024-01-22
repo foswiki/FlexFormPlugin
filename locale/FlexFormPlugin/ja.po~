@@ -1,0 +1,30 @@
+# Foswiki translation for Japanese
+# Translators:
+#   Foswiki:Main/KenYuminaga, 2008
+msgid ""
+msgstr ""
+"Project-Id-Version: Foswiki $Id\n"
+"Report-Msgid-Bugs-To: foswiki-svn@lists.sourceforge.net\n"
+"POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2010-09-13 04:19+0000\n"
+"Last-Translator: Joel DeJesus <dejesus.joel@gmail.com>\n"
+"Language-Team: Foswiki Japanese team\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Pootle 1.1.0\n"
+"X-Poedit-Country: JAPAN\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: lib/Foswiki/Plugins/FlexFormPlugin/RenderForDisplay.pm:80
+#, fuzzy
+msgid "Edit %1"
+msgstr "編集 %1"
+
+#: templates/inlineedit.tmpl:50
+#, fuzzy
+msgid "access denied"
+msgstr "アクセスが拒否されました"
+

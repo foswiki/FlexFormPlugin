@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2022 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2024 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -31,8 +31,9 @@ sub handle {
 
   #$this->writeDebug("called ".__PACKAGE__."->handle($theTopic, $theWeb)");
 
+  my $request = Foswiki::Func::getRequestObject();
   my $thisTopic = $params->{_DEFAULT} || $params->{topic} || $theTopic;
-  my $thisRev = $params->{revision} || $params->{rev};
+  my $thisRev = $params->{revision} // $params->{rev} // $request->param("rev");
   my $theFields = $params->{field} || $params->{fields};
   my $theForm = $params->{form};
   my $theValue = $params->{value};
@@ -122,7 +123,7 @@ sub handle {
   $this->{session}{plugins}->dispatch('beforeEditHandler', $text, $thisTopic, $thisWeb, $topicObj);
   $topicObj->text($text);
 
-  $theForm = $this->{session}{request}->param('formtemplate') unless $theForm;
+  $theForm = $request->param('formtemplate') unless $theForm;
   $theForm = $topicObj->getFormName unless $theForm;
   return '' unless $theForm;
 
@@ -230,7 +231,9 @@ sub handle {
     $fieldDescription = $params->{$fieldName . '_description'} if defined $params->{$fieldName . '_description'};
     $fieldTitle = $params->{$fieldName . '_title'} if defined $params->{$fieldName . '_title'};    # see also map
     $fieldAllowedValues = $params->{$fieldName . '_values'} if defined $params->{$fieldName . '_values'};
+    $fieldAllowedValues = $params->{$fieldName . '_params'} if defined $params->{$fieldName . '_params'};
     $fieldDefault = $params->{$fieldName . '_default'} if defined $params->{$fieldName . '_default'};
+    $fieldDefiningTopic = $params->{$fieldName . '_definition'} if defined $params->{$fieldName . '_definition'};
 
     my $fieldSort = Foswiki::Func::isTrue($params->{$fieldName . '_sort'}, $theSort);
     $fieldAllowedValues = $this->sortValues($fieldAllowedValues, $fieldSort) if $fieldSort;
@@ -240,8 +243,10 @@ sub handle {
     my $fieldClone;
     if ( $fieldType ne $field->{type}
       || $params->{$fieldName . '_size'}
+      || defined($params->{$fieldName . '_definition'})
       || defined($params->{$fieldName . '_name'})
       || defined($params->{$fieldName . '_values'})
+      || defined($params->{$fieldName . '_params'})
       || $fieldSort)
     {
       $fieldClone = $form->createField(

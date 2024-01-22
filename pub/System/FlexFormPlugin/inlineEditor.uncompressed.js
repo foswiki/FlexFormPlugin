@@ -1,7 +1,7 @@
 /*
  * InlineEditor for FlexFormPlugin 
  *
- * Copyright (c) 2022 Michael Daum
+ * Copyright (c) 2022-2024 Michael Daum
  *
  * Licensed under the GPL licenses http://www.gnu.org/licenses/gpl.html
  *
@@ -18,7 +18,8 @@
       editorDef: "renderForEdit",
       viewDef: "renderForDisplay",
       valueSelector: ".inlineEditValue",
-      buttonSelector: ".inlineEditButton"
+      buttonSelector: ".inlineEditButton",
+      activeClass: "inlineEditActive"
    };
 
    function InlineEditor(elem, opts) {
@@ -33,35 +34,34 @@
    }
 
    InlineEditor.prototype.init = function() {
-      var self = this;
+      var self = this, valueEdit;
 
       self.id = self.elem.attr("id") || "inlineEditor_"+foswiki.getUniqueID();
       self.elem.attr("id", self.id);
       self.editInProgress = false;
       self.isBlocked = false;
 
-      self.valueContainer = self.elem.find(self.opts.valueSelector);
-      self.valueContainer.parent().addClass("inlineEditValueContainer");
-
-      self.valueContainer.on("dblclick", function() {
-        var container = $(this);
+      valueEdit = self.elem.find(self.opts.valueSelector);
+      valueEdit.parent().addClass("inlineEditValueContainer");
+      valueEdit.on("dblclick", function() {
+        var elem = $(this);
 
         if (self.editInProgress) {
           //console.log("edit already in progress");
         } else {
           self.clearSelection();
-          self.loadEditor(container);
+          self.loadEditor(elem);
           return false;
         }
       });
 
-      self.valueContainer.each(function() {
-        var container = $(this);
-        self.initEditButton(container);
+      valueEdit.each(function() {
+        var elem = $(this);
+        self.initEditButton(elem);
       });
 
       $(window).on("beforeunload", function() {
-        //console.log("got beforeunload event.");
+        //console.log("got beforeunload event for ",self.id);
 
         if (self.editInProgress) {
           return "Are you sure?"; // dummy text
@@ -71,10 +71,10 @@
       });
   };
 
-  InlineEditor.prototype.initForm = function(container) {
+  InlineEditor.prototype.initForm = function(elem) {
     var self = this,
-        form = container.find("form:first"),
-        opts = $.extend({}, self.opts, container.data());
+        form = elem.find("form:first"),
+        opts = $.extend({}, self.opts, elem.data());
 
     form.data("ajaxForm", new AjaxForm(form, {
       beforeSubmit: function() {
@@ -82,7 +82,7 @@
       },
       beforeSerialize: function() {
         //console.log("beforeSerialize");
-        container.find("textarea.natedit").each(function() {
+        elem.find("textarea.natedit").each(function() {
           var natEdit = $(this).data("natedit");
           if (natEdit) {
             natEdit.beforeSubmit();
@@ -95,21 +95,29 @@
           if (opts.reload) {
             window.location.reload();
           } else {
-            self.loadView(container);
+            self.loadView(elem);
           }
         });
       }
     })).validate({
-      ignore: ":hidden:not(.jqSelect2,.foswikiAttachmentField), div, .foswikiIgnoreValidation",
+      ignore: "div, .foswikiIgnoreValidation",
       onsubmit: false,
       ignoreTitle: true
     });
 
     form.find(".inlineEditCancel").on("click", function() {
       self.unlock().done(function() {
-        self.loadView(container);
+        self.loadView(elem);
       });
       return false;
+    });
+
+    form.find("input[type=text]").on("keydown", function(ev) {
+      if (ev.key === 'Escape') {
+        self.unlock().done(function() {
+          self.loadView(elem);
+        });
+      }
     });
   };
 
@@ -144,15 +152,15 @@
         msg = "";
 
     if (!self.isBlocked) {
-      console.log("... blocking");
+      //console.log("... blocking");
       self.isBlocked = true;
       if (txt) {
         msg = "<h1>"+txt+"</h1>";
       }
-      console.log("... msg=",msg);
+      //console.log("... msg=",msg);
       $.blockUI({message: msg});
     } else {
-      console.log("... already blocked");
+      //console.log("... already blocked");
     }
   };
 
@@ -163,34 +171,32 @@
     $.unblockUI();
   };
 
-  InlineEditor.prototype.initEditButton = function(container) {
+  InlineEditor.prototype.initEditButton = function(elem) {
     var self = this;
 
-    container.find(self.opts.buttonSelector).not(".inited").on("click", function() {
+    elem.find(self.opts.buttonSelector).not(".inited").on("click", function() {
       $(this).addClass("inited");
-      self.loadEditor(container);
+      self.loadEditor(elem);
       return false;
     });
   };
 
-   InlineEditor.prototype.loadTemplate = function(container, opts) {
+   InlineEditor.prototype.loadTemplate = function(elem, opts) {
       var self = this;
 
       //console.log("loadTemplate opts=",opts);
       self.block();
 
       return foswiki.loadTemplate(opts).done(function(data) {
-         container.html(data.expand); //.hide().fadeIn();
+         elem.html(data.expand); //.hide().fadeIn();
       }).always(function() {
          self.unblock();
       });
    };
 
-   InlineEditor.prototype.loadEditor = function (container) {
+   InlineEditor.prototype.loadEditor = function (elem) {
       var self = this,
           dfd = $.Deferred();
-
-      container.addClass("inlineEditActive");
 
       // close any user tooltip
       $(".jqUserTooltip").each(function() {
@@ -211,36 +217,43 @@
 
       self.lock().done(function() {
         var opts = $.extend({}, {
-           name: container.data("template") || self.opts.template,
-           expand: container.data("editorDef") || self.opts.editorDef,
+           name: elem.data("template") || self.opts.template,
+           expand: elem.data("editorDef") || self.opts.editorDef,
            topic: self.opts.topic
-        }, container.data());
+        }, elem.data());
 
-        self.loadTemplate(container, opts).done(function() {
-          self.elem.trigger("editLoaded");
+        self.loadTemplate(elem, opts).done(function() {
+          elem.parent().addClass(self.opts.activeClass);
+
+          self.elem.addClass("inlineEditorLocked");
+          self.elem.trigger("editLoaded", opts);
           self.editInProgress = true;
-          container.find("input[type=text], input[type=password], textarea").first().focus();
+          elem.find("input[type=text], input[type=password], textarea").first().focus();
           dfd.resolve();
         }).done(function() {
-          self.initForm(container);
+          self.initForm(elem);
         }).fail(failHandler);
       }).fail(failHandler);
 
       return dfd.promise();
    };
 
-   InlineEditor.prototype.loadView = function (container) {
+   InlineEditor.prototype.loadView = function (elem) {
       var self = this,
          opts = $.extend({}, {
-           name: container.data("template") || self.opts.template,
-           expand: container.data("viewDef") || self.opts.viewDef,
+           name: elem.data("template") || self.opts.template,
+           expand: elem.data("viewDef") || self.opts.viewDef,
            topic: self.opts.topic
-        }, container.data());
+        }, elem.data());
 
-      return self.loadTemplate(container, opts).done(function() {
-        container.removeClass("inlineEditActive");
-        self.initEditButton(container);
-        self.elem.trigger("viewLoaded");
+      delete opts.template;
+      delete opts.viewDef;
+
+      return self.loadTemplate(elem, opts).done(function() {
+        elem.parent().removeClass(self.opts.activeClass);
+        self.elem.removeClass("inlineEditorLocked");
+        self.initEditButton(elem);
+        self.elem.trigger("viewLoaded", opts);
       });
    };
 

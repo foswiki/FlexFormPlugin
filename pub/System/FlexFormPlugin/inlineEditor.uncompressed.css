@@ -1,3 +1,10 @@
+.inlineEditor .isEmpty {
+  opacity:0;
+  transition: 250ms;
+}
+.inlineEditor:hover .isEmpty {
+  opacity:1;
+}
 .inlineEditor form,
 .inlineEditor form .natedit,
 .inlineEditor form .jqMultiTextContainer input[type=text],
@@ -16,9 +23,10 @@
 }
 .inlineEditButton {
   opacity:0;
-  padding:0 0.5em;
-  transition: opacity 250ms 150ms;
+  padding:0 0.5rem;
+  transition: 250ms;
   position:absolute;
+  z-index:1;
 }
 .inlineAbsolute {
   position:absolute;
@@ -30,7 +38,7 @@
   display:none;
 }
 .inlineEditValueContainer:hover .inlineEditButton {
-   opacity:1;
+  opacity:1;
 }
 .inlineEditButtonBox button {
    margin:0.5em 0.5em 0.5em 0;
@@ -50,7 +58,7 @@
 .inlineEditor th {
   white-space:nowrap;
 }
-td.inlineEditActive {
+td.inlineEditValue {
   width:100%;
 }
 .inlineEditActive .foswikiRadioButtonGroup {
@@ -58,7 +66,7 @@ td.inlineEditActive {
 }
 .inlineEditActive .foswikiCheckboxGroup,
 .inlineEditActive .foswikiRadioButtonGroup {
-  max-height:calc(8em * var(--line-height));
+  max-height:calc(9em * var(--line-height));
   overflow-y:auto;
 }
 .inlineEditActive .foswikiCheckboxGroup tr,

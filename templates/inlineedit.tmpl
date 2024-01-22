@@ -6,6 +6,7 @@
   %IF{"$'URLPARAM{value}'"
     then="value=\"%URLPARAM{"value"}%\""
   }%
+  %URLPARAM{"formfield" default="NoSuchThing"}%_default="%URLPARAM{"default"}%"
   format="%TMPL:P{"renderForDisplay::format"}%"
 }%%TMPL:END%
 
@@ -17,9 +18,10 @@
           typemapping=\"%URLPARAM{"typemapping"}%\"
           formfield=\"%URLPARAM{"formfield" default="NoSuchThing"}%\"
           value=\"%URLPARAM{"value"}%\"
+          default=\"%URLPARAM{"default"}%\"
           size=\"%URLPARAM{"size"}%\"
           type=\"%URLPARAM{"type"}%\"
-          format=\"%TMPL:P{"renderForEdit::format"}%\"
+          format=\"%URLPARAM{"format" default="%TMPL:P{"renderForEdit::format"}%"}%\"
         }$percnt"
   else="$percntTMPL:P{\"renderAccessDenied\"}$percnt"
 }%%TMPL:END%
@@ -35,13 +37,16 @@
             <input type='hidden' name='topic' value='%WEB%.%TOPIC%' />"
   format="%format%"
   footer="<div class='inlineEditButtonBox'>
-            <button type='submit' class='inlineEditSubmit'>%JQICON{"fa-check"}%</button>
-            <button type='button' class='inlineEditCancel'>%JQICON{"fa-times"}%</button>
+            <button type='submit' class='inlineEditSubmit foswikiButton' title='%MAKETEXT{"Save"}%'>%JQICON{"fa-check"}%</button>
+            <button type='button' class='inlineEditCancel foswikiButton' title='%MAKETEXT{"Cancel"}%'>%JQICON{"fa-times"}%</button>
            </div></form>"
   %formfield%_size="%size%"
   %formfield%_type="%type%"
+  %IF{"not '%default%'=~'^(%.*)?$'"
+    then="%formfield%_default=\"%default%\""
+  }%
 }%%JQREQUIRE{"ajaxform, validate"}%%TMPL:END%
 
 %TMPL:DEF{"renderForEdit::format"}%$edit <div class='foswikiFormDescription'>$description</div>%TMPL:END%
 
-%TMPL:DEF{"renderAccessDenied"}%%TMPL:P{"renderForDisplay"}%<div class='foswikiAlert'>%TRANSLATE{"access denied"}%</div>%TMPL:END%
+%TMPL:DEF{"renderAccessDenied"}%%TMPL:P{"renderForDisplay"}%<div class='foswikiAlert'>%MAKETEXT{"access denied"}%</div>%TMPL:END%

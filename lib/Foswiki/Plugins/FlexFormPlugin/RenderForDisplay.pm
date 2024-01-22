@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2022 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2024 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -32,11 +32,11 @@ sub handle {
 
   #$this->writeDebug("called ".__PACKAGE__."->handle($theTopic, $theWeb)");
 
+  my $request = Foswiki::Func::getRequestObject();
   my $thisTopic = $params->{_DEFAULT} || $params->{topic} || $theTopic;
-  my $thisRev = $params->{revision} || $params->{rev};
+  my $thisRev = $params->{revision} // $params->{rev} // $request->param("rev");
   my $theFields = $params->{field} || $params->{fields};
   my $theForm = $params->{form};
-  my $theFormat = $params->{format};
   my $theHeader = $params->{header};
   my $theFooter = $params->{footer};
   my $theSep = $params->{separator} || '';
@@ -76,11 +76,11 @@ sub handle {
   my $inlineEditorClass = '';
   if ($theEditable) {
     Foswiki::Plugins::JQueryPlugin::createPlugin("InlineEditor");
-    $editIcon = '<a class="inlineEditButton">%JQICON{"'.$theEditIcon.'"}%</a>';
+    $editIcon = '<noautolink><a class="inlineEditButton" title="%MAKETEXT{"Edit [_1]" args="$name"}%">%JQICON{"'.$theEditIcon.'"}%</a></noautolink>';
     $inlineEditorClass = 'inlineEditor';
   }
 
-  $theForm = $this->{session}{request}->param('formtemplate') unless $theForm;
+  $theForm = $request->param('formtemplate') unless $theForm;
   $theForm = $topicObj->getFormName unless $theForm;
   return '' unless $theForm;
 
@@ -104,98 +104,47 @@ sub handle {
   $theType = 'div' if !Foswiki::Func::getContext()->{GridLayoutPluginEnabled} && $theType eq 'grid';
   $theType = 'table' unless $theType =~ /^(div|table|grid)$/;
 
-  if (!defined($theFormat) && !defined($theHeader) && !defined($theFooter)) {
+  if (!defined($params->{format}) && !defined($theHeader) && !defined($theFooter)) {
 
     # table
-    if ($theType eq '' || $theType eq 'table') { 
+    if ($theType eq 'table') {
       $theFooter = '</table></div>';
       if ($theEditable) {
         $theHeader = "<div class='foswikiFormSteps \$inlineEditor' data-topic='\$topic'><table class='foswikiLayoutTable'>";
-        $theFormat = <<'HERE';
-<tr>
-          <th class="foswikiTableFirstCol"> $title: </th>
-          <td class="foswikiFormValue inlineEditValue" data-formfield="$name""> 
-$value <!-- -->
-$editicon
-        </td>
-      </tr>
-HERE
       } else {
         $theHeader = "<div class='foswikiFormSteps'><table class='foswikiLayoutTable'>";
-        $theFormat = <<'HERE';
-<tr>
-          <th class="foswikiTableFirstCol"> $title: </th>
-          <td class="foswikiFormValue"> 
-$value <!-- -->
-        </td>
-      </tr>
-HERE
       }
-    } 
+    }
 
     # div
-    elsif ($theType eq 'div') { 
+    elsif ($theType eq 'div') {
       $theFooter = '</div>';
       if ($theEditable) {
         $theHeader = "<div class='foswikiFormSteps \$inlineEditor' data-topic='\$topic'>";
-        $theFormat = <<'HERE';
-<div class='foswikiFormStep'>
-  <h3> $title </h3>
-  <div class='inlineEditValue' data-formfield='$name'>
-$value <!-- -->
-$editicon
-  </div>
-</div>
-HERE
       } else {
         $theHeader = "<div class='foswikiFormSteps'>";
-        $theFormat = <<'HERE';
-<div class='foswikiFormStep'>
-<h3> $title </h3>
-$value <!-- -->
-</div>
-HERE
       }
-    } 
+    }
 
     # grid
     elsif (Foswiki::Func::getContext()->{GridLayoutPluginEnabled} && $theType eq 'grid') {
       $theFooter = '%ENDGRID%</div>';
       if ($theEditable) {
         $theHeader = '<div class="foswikiPageForm foswikiGridForm $inlineEditor" data-topic="$topic">%BEGINGRID{gutter="1"}%';
-        $theFormat = <<'HERE';
-%BEGINCOL{"3" class="foswikiGridHeader"}% 
-<h3 >$title:</h3>
-%BEGINCOL{"9"}%
-<div class='inlineEditValue' data-formfield='$name'>
-$value <!-- -->
-$editicon
-</div>
-HERE
       } else {
         $theHeader = '<div class="foswikiPageForm foswikiGridForm">%BEGINGRID{gutter="1"}%';
-        $theFormat = <<'HERE';
-%BEGINCOL{"3" class="foswikiGridHeader"}% 
-<h3 >$title:</h3>
-%BEGINCOL{"9"}%
-$value
-HERE
       }
     }
   }
 
   $theHeader ||= '';
   $theFooter ||= '';
-  $theFormat ||= '';
 
   # make it compatible
   $theHeader =~ s/%A_TITLE%/\$title/g;
-  $theFormat =~ s/%A_TITLE%/\$title/g;
-  $theFormat =~ s/%A_VALUE%/\$value/g;
   $theFooter =~ s/%A_TITLE%/\$title/g;
   $theLabelFormat =~ s/%A_TITLE%/\$title/g;
   $theLabelFormat =~ s/%A_VALUE%/\$value/g;
-
 
   my $formTitle;
   if ($form->can('getPath')) {
@@ -232,6 +181,8 @@ HERE
   }
 
   my @result = ();
+  my $theLimit = $params->{limit} // 0;
+  my $index = 1;
   foreach my $field (@selectedFields) {
     next unless $field;
 
@@ -294,10 +245,11 @@ HERE
     $fieldDescription = $params->{$fieldName . '_description'} if defined $params->{$fieldName . '_description'};
     $fieldTitle = $params->{$fieldName . '_title'} if defined $params->{$fieldName . '_title'};    # see also map
     $fieldAllowedValues = $params->{$fieldName . '_values'} if defined $params->{$fieldName . '_values'};
+    $fieldAllowedValues = $params->{$fieldName . '_params'} if defined $params->{$fieldName . '_params'};
     $fieldDefault = $params->{$fieldName . '_default'} if defined $params->{$fieldName . '_default'};
+    $fieldValue = $params->{$fieldName . '_value'} if defined $params->{$fieldName . '_value'};
     $fieldType = $params->{$fieldName . '_type'} if defined $params->{$fieldName . '_type'};
     $fieldType = $typeMapping{$fieldType} if defined $typeMapping{$fieldType};
-    $fieldValue = $params->{$fieldName . '_value'} if defined $params->{$fieldName . '_value'};
 
     $fieldValue = $fieldDefault unless defined $fieldValue && $fieldValue ne '';
     next if $theHideEmpty && (!defined($fieldValue) || $fieldValue eq '');
@@ -314,15 +266,15 @@ HERE
     my $fieldSort = Foswiki::Func::isTrue($params->{$fieldName . '_sort'}, $theSort);
     $fieldAllowedValues = $this->sortValues($fieldAllowedValues, $fieldSort) if $fieldSort;
 
-    my $fieldFormat = $params->{$fieldName . '_format'} || $theFormat;
+    my $fieldFormat = $this->getFormat($params, $topicObj, $field);
 
     # temporarily remap field to another type
     my $fieldClone;
     if ( $fieldType ne $field->{type}
       || $params->{$fieldName . '_size'}
-      || defined($params->{$fieldName . '_size'})
       || defined($params->{$fieldName . '_name'})
       || defined($params->{$fieldName . '_values'})
+      || defined($params->{$fieldName . '_params'})
       || $fieldSort)
     {
       $fieldClone = $form->createField(
@@ -356,6 +308,8 @@ HERE
     $fieldTitle = $this->translate($fieldTitle, $theFormWeb, $theForm);
 
     # some must be expanded before renderForDisplay
+    $line =~ s/%A_TITLE%/\$title/g;
+    $line =~ s/%A_VALUE%/\$value/g;
     $line =~ s/\$title\b/$fieldTitle/g;
     $line =~ s/\$values\b/$fieldAllowedValues/g;
     $line =~ s/\$origvalues\b/$fieldOrigAllowedValues/g;
@@ -379,6 +333,7 @@ HERE
     next if $theHideEmpty && (!defined($displayValue) || $displayValue eq '');
 
     # render this by ourselfs
+    $line =~ s/\$editicon\b/$editIcon/g;
     $line =~ s/\$name\b/$fieldName/g;
     $line =~ s/\$type\b/$fieldType/g;
     $line =~ s/\$size\b/$fieldSize/g;
@@ -394,13 +349,15 @@ HERE
 
     # cleanup
     $fieldClone->finish() if defined $fieldClone;
+
+    last if $theLimit && $index >= $theLimit;
+    $index++;
   }
 
   return '' if $theHideEmpty && !@result;
 
   my $result = $theHeader . join($theSep, @result) . $theFooter;
   $result =~ s/\$topic\b/$thisWeb.$thisTopic/g;
-  $result =~ s/\$editicon\b/$editIcon/g;
   $result =~ s/\$inlineEditor\b/$inlineEditorClass/g;
   $result =~ s/\$nop//g;
   $result =~ s/\$n/\n/g;
@@ -408,6 +365,102 @@ HERE
   $result =~ s/\$dollar/\$/g;
 
   return $result;
+}
+
+sub getFormat {
+  my ($this, $params, $meta, $field) = @_;
+
+  my $theFormat;
+
+  $theFormat = $params->{$field->{name}."_format"} if defined $field;
+  $theFormat //= $params->{format};
+
+  my $theType = $params->{type} || '';
+  $theType = 'div' if !Foswiki::Func::getContext()->{GridLayoutPluginEnabled} && $theType eq 'grid';
+  $theType = 'table' unless $theType =~ /^(div|table|grid)$/;
+
+  my $theEditable;
+
+  $theEditable = Foswiki::Func::isTrue($params->{editable}, 0);
+  $theEditable = 0 if $theEditable && !$meta->haveAccess("change");
+  $theEditable = 0 unless $field->isEditable();
+
+  return $theFormat if defined $theFormat;
+
+  # table
+  if ($theType eq '' || $theType eq 'table') { 
+    if ($theEditable) {
+      $theFormat = <<'HERE';
+<tr>
+        <th class="foswikiTableFirstCol"> $title: </th>
+        <td class="foswikiFormValue inlineEditValue" data-formfield="$name""> 
+$value <!-- -->
+$editicon
+      </td>
+    </tr>
+HERE
+    } else {
+      $theFormat = <<'HERE';
+<tr>
+        <th class="foswikiTableFirstCol"> $title: </th>
+        <td class="foswikiFormValue"> 
+$value <!-- -->
+      </td>
+    </tr>
+HERE
+    }
+
+    return $theFormat;
+  } 
+
+  # div
+  if ($theType eq 'div') { 
+    if ($theEditable) {
+      $theFormat = <<'HERE';
+<div class='foswikiFormStep'>
+<h3> $title </h3>
+<div class='inlineEditValue' data-formfield='$name'>
+$value <!-- -->
+$editicon
+</div>
+</div>
+HERE
+    } else {
+      $theFormat = <<'HERE';
+<div class='foswikiFormStep'>
+<h3> $title </h3>
+$value <!-- -->
+</div>
+HERE
+    }
+    return $theFormat;
+  } 
+
+  # grid
+  if (Foswiki::Func::getContext()->{GridLayoutPluginEnabled} && $theType eq 'grid') {
+    if ($theEditable) {
+      $theFormat = <<'HERE';
+%BEGINCOL{"3" class="foswikiGridHeader"}% 
+<h3 >$title:</h3>
+%BEGINCOL{"9"}%
+<div class='inlineEditValue' data-formfield='$name'>
+$value <!-- -->
+$editicon
+</div>
+HERE
+    } else {
+      $theFormat = <<'HERE';
+%BEGINCOL{"3" class="foswikiGridHeader"}% 
+<h3 >$title:</h3>
+%BEGINCOL{"9"}%
+$value
+HERE
+    }
+   
+    return $theFormat;
+  }
+  
+  return "";
 }
 
 1;

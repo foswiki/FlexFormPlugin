@@ -28,15 +28,17 @@ While %<nop>RENDERFOREDIT% and %<nop>%RENDERFORDISPLAY render forms for the net 
 the %<nop>RENDERFORMDEF= macro renders information about the !DataForm definition itself identpendent of
 any topic actually using it. This may be used to provide more defailed insights into the !DataForm definition.
 
-The %<nop>DISPLAYFIELD% is supposed to be a shortcut for =%<nop>RENDERFORDISPLAY% for a single formfield, similar
+%<nop>DISPLAYFIELD% is supposed to be a shortcut for %<nop>RENDERFORDISPLAY% for a single formfield, similar
 to %<nop>FORMFIELD%. Contrary to %<nop>FORMFIELD% it renders a proper display value based on the type of the formfield,
 whereas %<nop>FORMFIELD% returns the raw data as stored in the topic.
+
+Similarly, %<nop>EDITFIELD% is a shortcut for %<nop>%RENDERFOREDIT% rendering an editor for a single field.
 
 ---++ Usage
 ---+++ RENDERFOREDIT
 | *Parameter* | *Description* | *Default* |
 | "..." or topic="..." | name of a topic to render the edit form for | the base topic of the current url |
-| revision="..." or rev="..." | topic revision which to use the data from while populating the edit form | |
+| revision="..." or rev="..." | topic revision which to use the data from while populating the edit form | "rev" url parameter |
 | fields="&lt;fieldname1>, &lt;fieldname2>, ..." | list of formfields to render the interface for | all known formfields |
 | prefix="..." | adds a prefix string to the name while rendering the editor for a formfield | |
 | footer="..." | footer string to apped to the output | &lt;empty string> |
@@ -66,7 +68,9 @@ whereas %<nop>FORMFIELD% returns the raw data as stored in the topic.
   &lt;fieldname>_title="..." %BR% \
   &lt;fieldname>_type="..." %BR% \
   &lt;fieldname>_values="..." %BR% \
-  | these parameters allow to override the formfield properties as specified in the !DataForm definition; for example a =Teaser_type="text"= , =Teaser_size="30"= will override a definition of a =Teaser= formfield that otherwise is a =textarea= of size =80x25=; &lt;fieldname>_values redefines the list of allowed values for that field | values as defined in the !DataForm definition and the current topic |
+  &lt;fieldname>_params="..." %BR% \
+  &lt;fieldname>_definition="..." %BR% \
+  | these parameters allow to override the formfield properties as specified in the !DataForm definition; for example a =Teaser_type="text"= , =Teaser_size="30"= will override a definition of a =Teaser= formfield that otherwise is a =textarea= of size =80x25=; &lt;fieldname>_values redefines the list of allowed values for that field; &lt;fieldname>_definition redefinies a value defining topic | values as defined in the !DataForm definition and the current topic |
 | &lt;fieldname>_value="..." | value to be inserted into the edit interface of the named field | looks for urlparam &lt;fieldname>, defaults to stored value |
 | &lt;fieldname>_sort="..." | on/off/asc/desc/rev - sort allowed values before displaying them | as defined in the !DataForm |
 
@@ -91,6 +95,7 @@ whereas %<nop>FORMFIELD% returns the raw data as stored in the topic.
 | excludevalue="..." | regular expression field value must match to be excluded in the output | undefined |
 | include="..." | regular expression fieldnames must match to be included in the output | undefined |
 | exclude="..." | regular expression fieldnames must match to be excluded from the output | undefined |
+| limit="..." | specifies the maximum number of formfields to be included in the output |
 | labelformat="..." | format string used for labels exclusively; labels aren't real input fields; they are part of the form definition but carry read-only values only if at all  | same as =format= |
 | map="&lt;fieldname1>=&lt;title1>, &lt;fieldname2>=&lt;title2>, ..." | allows to map a fieldname to a different title string (*deprecated*: please use &lt;fieldname>_title to redefine the title) | original fieldnames are used as title string |
 | separator="..." | string to be put between each formatted output per formfield | &lt;empty string> |
@@ -107,6 +112,7 @@ whereas %<nop>FORMFIELD% returns the raw data as stored in the topic.
   &lt;fieldname>_type="..." %BR% \
   &lt;fieldname>_value="..." %BR% \
   &lt;fieldname>_values="..." %BR% \
+  &lt;fieldname>_params="..." %BR% \
   | see above | defaults as defined in the !DataForm definition and the current topic |
 
 If all three =format=, =header= and =footer= are undefined a =foswikiFormSteps= block will be rendered as illustrated in the example below.
@@ -135,11 +141,21 @@ The =format= parameter may contain the following variables:
 | *Parameter* | *Description* | *Default* |
 | "..." or field="..." | name of the field to display | |
 | topic="..." | topic to display the field for | current topic |
+| form="..." | topic name containing the !DataForm definition | form found at =topic= |
 | default="..." | default value if the field isn't defined | _empty string_ |
 | editable="on/off" | enable/disable inline editing | off |
 | format="..." | format for the field (see RENDERFORDISPLAY) | =$value= | 
 | revision="..." or rev="..." | topic revision to display | |
-| hideempty="on/off" | hide empty formfields | off |
+
+---+++ EDITFIELD
+
+| *Parameter* | *Description* | *Default* |
+| "..." or field="..." | name of the field to render an editor for | |
+| topic="..." | topic to render the editor for | current topic |
+| form="..." | topic name containing the !DataForm definition | form found at =topic= |
+| default="..." | default value if the field isn't defined | _empty string_ |
+| format="..." | format for the field (see RENDERFOREDIT) | =$edit= | 
+| revision="..." or rev="..." | topic revision to display | |
 
 ---+++ RENDERFORMDEF
 
@@ -211,7 +227,7 @@ in inline editing to a custom output. The following example illustrates the requ
   format="<tr>
             <th>$title:</th>
             <td class='inlineEditValue' data-formfield='$name'>$value $editicon</td>
-          </tr>
+          </tr>"
   separator="$n"
   footer="</table>"
 }%
@@ -235,7 +251,7 @@ Note that multiple instances of =%RENDERFORDISPLAY= can be covered by a single i
   format="<tr>
             <th>$title:</th>
             <td class='inlineEditValue' data-formfield='$name' data-topic='$web.$topic'>$value $editicon</td>
-          </tr>
+          </tr>"
   separator="$n"
   footer="</table>"
 }%
@@ -248,7 +264,7 @@ Note that multiple instances of =%RENDERFORDISPLAY= can be covered by a single i
   format="<tr>
             <th>$title:</th>
             <td class='inlineEditValue' data-formfield='$name' data-topic='$web.$topic'>$value $editicon</td>
-          </tr>
+          </tr>"
   separator="$n"
   footer="</table>"
 }%
@@ -302,6 +318,12 @@ This also illustrates how to edit formfields of different topics in one inline e
 
 ---++ Change History
 %TABLE{columnwidths="7em" tablewidth="100%"}%
+|  22 Jan 2024: | added EDITFIELD; \
+                  added =_definition= to RENDERFOREDIT; \
+                  added =_params= as a synonym for =_values= as this column is used form formfield parameters more often than for listing allowed values;\
+                  rationalized the way format strings are collected and defaulted; \
+                  read =rev= url parameter by default; \
+                  added =limit= parameter for RENDERFORDISPLAY |
 |  29 Apr 2022: | added =includevalue= and =excludevalue= to RENDERFORDISPLAY |
 |  22 Feb 2022: | added inline editor feature to RENDERFORDISPLAY |
 |  25 Jan 2022: | fixed =$description= in RENDERFORMDEF |
@@ -355,7 +377,7 @@ This also illustrates how to edit formfields of different topics in one inline e
 
 %META:FORM{name="PackageForm"}%
 %META:FIELD{name="Author" title="Author" value="Foswiki:MichaelDaum"}%
-%META:FIELD{name="Copyright" title="Copyright" value="&copy; 2009-2022 Michael Daum"}%
+%META:FIELD{name="Copyright" title="Copyright" value="&copy; 2009-2024 Michael Daum"}%
 %META:FIELD{name="Description" title="Description" value="%25$SHORTDESCRIPTION%25"}%
 %META:FIELD{name="Home" title="Home" value="Foswiki:Extensions/%TOPIC%"}%
 %META:FIELD{name="License" title="License" value="[[http://www.gnu.org/licenses/gpl.html][GPL (Gnu General Public License)]]"}%

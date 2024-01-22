@@ -1,0 +1,35 @@
+# Foswiki translation for finnish
+# Translators:
+#   Heikki Toivonen <heikki@osafoundation.org>
+#   Tapio Salonsaari <take@nerd.fi> 2009
+msgid ""
+msgstr ""
+"Project-Id-Version: Foswiki $Id\n"
+"Report-Msgid-Bugs-To: foswiki-svn@lists.sourceforge.net\n"
+"POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2010-07-15 14:07+0200\n"
+"Last-Translator: ghfg <sdfsd@gmail.com>\n"
+"Language-Team: FINNISH <heikki@osafoundation.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Finnish\n"
+
+#: templates/inlineedit.tmpl:41
+msgid "Cancel"
+msgstr ""
+
+#: lib/Foswiki/Plugins/FlexFormPlugin/RenderForDisplay.pm:79
+#, fuzzy
+msgid "Edit %1"
+msgstr "Muokkaa %1"
+
+#: templates/inlineedit.tmpl:40
+msgid "Save"
+msgstr ""
+
+#: templates/inlineedit.tmpl:52
+#, fuzzy
+msgid "access denied"
+msgstr "pääsy kielletty"

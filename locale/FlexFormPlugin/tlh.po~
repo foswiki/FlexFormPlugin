@@ -1,0 +1,27 @@
+# Foswiki translation for <Language>
+# Translators:
+#   <add-yourself-here>
+msgid ""
+msgstr ""
+"Project-Id-Version: Foswiki $Id\n"
+"Report-Msgid-Bugs-To: foswiki-svn@lists.sourceforge.net\n"
+"POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2017-07-18 15:15+0200\n"
+"Last-Translator: Lieven L. Litaer <qephom@gmx.de>\n"
+"Language-Team: none\n"
+"Language: tlh\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 2.4\n"
+
+#: lib/Foswiki/Plugins/FlexFormPlugin/RenderForDisplay.pm:80
+#, fuzzy
+msgid "Edit %1"
+msgstr "choH %1"
+
+#: templates/inlineedit.tmpl:50
+#, fuzzy
+msgid "access denied"
+msgstr "naw&&#39; lajHa&&#39;lu&&#39;"
