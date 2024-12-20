@@ -55,7 +55,7 @@ sub handle {
   my $theHideEmpty = Foswiki::Func::isTrue($params->{hideempty}, 0);
   my $theIgnoreError = Foswiki::Func::isTrue($params->{ignoreerror}, 0);
   my %typeMapping = ();
-
+  
   foreach my $item (split(/\s*,\s*/, $params->{typemapping} || '')) {
     if ($item =~ /^(.*)=(.*)$/) {
       $typeMapping{$1} = $2;
@@ -111,7 +111,7 @@ sub handle {
   $theMandatory = "<span class='foswikiAlert'>**</span> " unless defined $theMandatory;
   $theHiddenFormat = '$edit' unless defined $theHiddenFormat;
 
-  my $thisWeb = $theWeb;
+  my $thisWeb = $params->{web} || $theWeb;
 
   ($thisWeb, $thisTopic) = Foswiki::Func::normalizeWebTopicName($thisWeb, $thisTopic);
   my $topicObj = $this->getTopicObject($thisWeb, $thisTopic, $thisRev);
@@ -189,7 +189,7 @@ sub handle {
     my $fieldAllowedValues = '';
     # CAUTION: don't use field->getOptions() on a +values field as that won't return the full valueMap...only the value part, but not the title map
     if ($field->can('getOptions') && $field->{type} !~ /(\+values|topic|user)/) {
-      my $options = $field->getOptions();
+      my $options = $field->getOptions($thisWeb, $thisTopic);
       if ($options) {
         $fieldAllowedValues = join($theValueSep, @$options);
       }
@@ -204,7 +204,7 @@ sub handle {
     # get the list of all allowed values without any +values mapping applied
     my $fieldOrigAllowedValues = '';
     if ($field->can('getOptions')) {
-      my $options = $field->getOptions();
+      my $options = $field->getOptions($thisWeb, $thisTopic);
       if ($options) {
         $fieldOrigAllowedValues = join($theValueSep, @$options);
       }
@@ -219,7 +219,7 @@ sub handle {
     # get the default value
     my $fieldDefault = '';
     if ($field->can('getDefaultValue')) {
-      $fieldDefault = $field->getDefaultValue() || '';
+      $fieldDefault = $field->getDefaultValue($thisWeb, $thisTopic) || '';
     }
 
     $fieldSize = $params->{$fieldName . '_size'} if $params->{$fieldName . '_size'} && $params->{$fieldName . '_size'} ne "";
@@ -259,12 +259,12 @@ sub handle {
         tooltip => $fieldDescription,
         attributes => $fieldAttrs,
         definingTopic => $fieldDefiningTopic,
-        web => $topicObj->web,
-        topic => $topicObj->topic,
+        web => $thisWeb,
+        topic => $thisTopic,
       );
       $field = $fieldClone;
     }
-    $this->translateField($field, $theWeb, $theForm);
+    $this->translateField($field, $thisWeb, $theForm);
 
     #$this->writeDebug("reading fieldName=$fieldName");
 

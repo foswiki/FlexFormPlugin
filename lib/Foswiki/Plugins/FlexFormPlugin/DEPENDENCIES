@@ -1,3 +1,4 @@
+Foswiki::Contrib::JsonRpcContrib,>=2.30,perl,Required
 Foswiki::Contrib::JQAjaxFormContrib,>=1.20,perl,Required
 Foswiki::Plugins::MoreFormfieldsPlugin,>=8.00,perl,Optional
 Foswiki::Plugins::MultiLingualPlugin,>=3.00,perl,Optional

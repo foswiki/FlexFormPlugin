@@ -22,7 +22,7 @@ use Foswiki::Func ();
 use Foswiki::Plugins::JQueryPlugin ();
 use Foswiki::Contrib::JsonRpcContrib ();
 
-our $VERSION = '8.31';
+our $VERSION = '8.41';
 our $RELEASE = '%$RELEASE%';
 our $SHORTDESCRIPTION = 'Flexible way to render <nop>DataForms';
 our $LICENSECODE = '%$LICENSECODE%';

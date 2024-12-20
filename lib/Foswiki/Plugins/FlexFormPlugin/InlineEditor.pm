@@ -39,12 +39,21 @@ sub new {
       css => ['inlineEditor.css'],
       javascript => ['inlineEditor.js'],
       puburl => '%PUBURLPATH%/%SYSTEMWEB%/FlexFormPlugin',
-      dependencies => ['foswikitemplate', 'pnotify', 'ui', 'jsonrpc', 'ajaxform', 'validate']
+      dependencies => ['JQUERYPLUGIN::EVENTNOTIFIER', 'foswikitemplate', 'pnotify', 'ui', 'jsonrpc', 'ajaxform', 'validate']
     ),
     $class
   );
 
   return $this;
+}
+
+sub publish {
+  my ($this, $channel, $message) = @_;
+
+  if (exists $Foswiki::cfg{Plugins}{WebSocketPlugin}{Enabled} && $Foswiki::cfg{Plugins}{WebSocketPlugin}{Enabled}) {
+    require Foswiki::Plugins::WebSocketPlugin;
+    return Foswiki::Plugins::WebSocketPlugin::publish($channel, $message);
+  }
 }
 
 sub jsonRpcSave {
@@ -54,6 +63,13 @@ sub jsonRpcSave {
 
   my $web = $session->{webName};
   my $topic = $session->{topicName};
+
+  # forward json-rpc params to cgi params
+  my $cgiRequestObj = Foswiki::Func::getRequestObject();
+  while (my ($key, $val) = each %{$request->params()}) {
+    next if $key eq 'topic';
+    $cgiRequestObj->param($key, $val);
+  }
 
   throw Foswiki::Contrib::JsonRpcContrib::Error(401, "Access denied")
     unless Foswiki::Func::checkAccessPermission('change', $wikiName, undef, $topic, $web);
@@ -112,7 +128,12 @@ sub jsonRpcUnlockTopic {
   my ($this, $session, $request) = @_;
 
   my ($web, $topic) = Foswiki::Func::normalizeWebTopicName($session->{webName}, $request->param("topic") || $session->{topicName});
+
+  $web =~ s/\//\./g;
+
   my (undef, $loginName, $unlockTime) = Foswiki::Func::checkTopicEditLock($web, $topic);
+  my $action = $request->param("action") || '';
+  my $clientId = $request->param("clientId") || 'server';
 
   return 'ok' unless $loginName;    # nothing to unlock
 
@@ -125,6 +146,12 @@ sub jsonRpcUnlockTopic {
   } else {
     Foswiki::Func::setTopicEditLock($web, $topic, 0);
   }
+
+  # send cancel message to websocket
+  $this->publish($web.".".$topic, {
+    type => "cancel",
+    clientId => $clientId,
+  });
 
   return 'ok';
 }

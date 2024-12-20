@@ -1,4 +1,4 @@
-%META:TOPICINFO{author="ProjectContributor" comment="" date="1573556648" format="1.1" version="1"}%
+%META:TOPICINFO{author="ProjectContributor" comment="" date="1734690769" format="1.1" version="1"}%
 ---+!! %TOPIC%
 %FORMFIELD{"Description"}% 
 
@@ -38,6 +38,7 @@ Similarly, %<nop>EDITFIELD% is a shortcut for %<nop>%RENDERFOREDIT% rendering an
 ---+++ RENDERFOREDIT
 | *Parameter* | *Description* | *Default* |
 | "..." or topic="..." | name of a topic to render the edit form for | the base topic of the current url |
+| web="..." | web where to create the topic | base web |
 | revision="..." or rev="..." | topic revision which to use the data from while populating the edit form | "rev" url parameter |
 | fields="&lt;fieldname1>, &lt;fieldname2>, ..." | list of formfields to render the interface for | all known formfields |
 | prefix="..." | adds a prefix string to the name while rendering the editor for a formfield | |
@@ -77,11 +78,13 @@ Similarly, %<nop>EDITFIELD% is a shortcut for %<nop>%RENDERFOREDIT% rendering an
 ---+++ RENDERFORDISPLAY
 | *Parameter* | *Description* | *Default* |
 | "..." or topic="..." | name of a topic to display the form for | the base topic of the current url |
+| web="..." | web where to display the topic | base web |
 | revision="..." or rev="..." | topic revision to display | |
 | autolink="on/off" | enable/disable !WikiWord autolinking when rendering a formfield; setting =autolink= sets the default for all fields specific settings of =&lt;fieldname>_autolink=which can, that is you can disable autolinking globally and switch it back on per field | on |
 | editable="on/off" | enable/disable inline editing, given the current user has got access rights on the target topic | off |
 | editicon="..." | font-awesome class of the icon displayed when hovering over an inline editor | fa-pencil |
 | fields="&lt;fieldname1>, &lt;fieldname2>, ..." | list of formfields to be displayed | all known formfields |
+| reload="&lt;fieldname1>, &lt;fieldname2>, ..." | list of formfields that trigger a page reload when editing them; use =on= to reload the page for each formfield change | off |
 | footer="..." | footer string to apped to the output | &lt;empty string> |
 | type="div/table/grid" | specify the layout to be used in case no format is specified manually (using header,format,separator and footer parameters); grid is only available when Foswiki:Extensions/GridLayoutPlugin is installed | table |
 | format="..." | format string to render each formfield with, more info below |  |
@@ -196,7 +199,7 @@ There are three layouts that are supported by =%RENDERFORDISPLAY= and =%RENDERFO
 
    * =table=
    * =div=
-   * =grid= (only supported if [[Foswiki:Extensions/GridLayoutPlugin][GridLayoutPlugin]] is installed)
+   * =grid= (only supported if [[https://foswiki.org/Extensions/GridLayoutPlugin][GridLayoutPlugin]] is installed)
 
 All of them have different advantages. A =table= layout aligns rows and columns nicely while using screen space quite economical.
 However tables don't behave responsive on mobile devices. A =div= based layout stacks formfields and their header from top to down
@@ -318,6 +321,9 @@ This also illustrates how to edit formfields of different topics in one inline e
 
 ---++ Change History
 %TABLE{columnwidths="7em" tablewidth="100%"}%
+|  20 Dec 2024: | added support for the upcoming <nop>WebSocketPlugin for realtime notification of topic changes |
+|  15 Dec 2024: | added =web= parameter to RENDERFORDISPLAY and RENDERFOREDIT |
+|  02 Sep 2024: | added =reload= parameter to RENDERFORDISPLAY |
 |  22 Jan 2024: | added EDITFIELD; \
                   added =_definition= to RENDERFOREDIT; \
                   added =_params= as a synonym for =_values= as this column is used form formfield parameters more often than for listing allowed values;\

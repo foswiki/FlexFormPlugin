@@ -30,7 +30,7 @@
       self.opts = $.extend({
          topic: foswiki.getPreference("WEB") + "." + foswiki.getPreference("TOPIC")
       }, defaults, this.elem.data(), opts);
-      self.init();     
+      self.init();
    }
 
    InlineEditor.prototype.init = function() {
@@ -43,6 +43,7 @@
 
       valueEdit = self.elem.find(self.opts.valueSelector);
       valueEdit.parent().addClass("inlineEditValueContainer");
+
       valueEdit.on("dblclick", function() {
         var elem = $(this);
 
@@ -60,6 +61,11 @@
         self.initEditButton(elem);
       });
 
+      valueEdit.on("reload", function() {
+        self.isBlocked = true;
+        self.loadView($(this));
+      });
+
       $(window).on("beforeunload", function() {
         //console.log("got beforeunload event for ",self.id);
 
@@ -69,12 +75,52 @@
 
         return;
       });
+
+      if (foswiki.eventClient) {
+        valueEdit.each(function() {
+          var $this = $(this), 
+              formfield = $this.data("formfield");
+
+          foswiki.eventClient.bind(`saveFormfield.${self.opts.topic}`, function(message) {
+            if (message.data.formfield === formfield && message.clientId !== foswiki.eventClient.id) {
+              self.isBlocked = true;
+              self.loadView($this).then(function() {
+                $this.effect("highlight");
+              });
+            }
+          })
+        });
+      }
   };
 
   InlineEditor.prototype.initForm = function(elem) {
     var self = this,
         form = elem.find("form:first"),
         opts = $.extend({}, self.opts, elem.data());
+
+    if (foswiki.eventClient) {
+      $("<input />").attr({
+        type: "hidden",
+        name: "clientId",
+        value: foswiki.eventClient.id
+      }).prependTo(form);
+    }
+
+    // convert size to width
+    form.find("input[size]").each(function() {
+      var $input = $(this), 
+          size = parseInt($input.attr("size"), 10) + 2;
+
+      $input.css("width", `min(${size}ch, 100%)`);
+    });
+
+    // convert cols to width
+    form.find("textarea[cols]").each(function() {
+      var $input = $(this),
+          cols = parseInt($input.attr("cols"), 10) + 2;
+
+      $input.css("width", `min(${cols}ch, 100%)`);
+    });
 
     form.data("ajaxForm", new AjaxForm(form, {
       beforeSubmit: function() {
@@ -91,11 +137,18 @@
       },
       complete: function() {
         //console.log("complete");
-        self.unlock().done(function() {
+        self.unlock("save").done(function() {
           if (opts.reload) {
             window.location.reload();
           } else {
             self.loadView(elem);
+          }
+        }).done(function() {
+          if (foswiki.eventClient) {
+            foswiki.eventClient.send("saveFormfield", {
+              channel: self.opts.topic, 
+              formfield: opts.formfield
+            });
           }
         });
       }
@@ -103,10 +156,10 @@
       ignore: "div, .foswikiIgnoreValidation",
       onsubmit: false,
       ignoreTitle: true
-    });
+    })
 
     form.find(".inlineEditCancel").on("click", function() {
-      self.unlock().done(function() {
+      self.unlock("cancel").done(function() {
         self.loadView(elem);
       });
       return false;
@@ -114,7 +167,7 @@
 
     form.find("input[type=text]").on("keydown", function(ev) {
       if (ev.key === 'Escape') {
-        self.unlock().done(function() {
+        self.unlock("cancel").done(function() {
           self.loadView(elem);
         });
       }
@@ -133,16 +186,18 @@
     });
   };
 
-  InlineEditor.prototype.unlock = function() {
+  InlineEditor.prototype.unlock = function(action ) {
     var self = this;
 
     self.editInProgress = false;
+    action = action || "save";
 
     return foswiki.jsonRpc({
       namespace: "FlexFormPlugin",
       method: "unlock",
       params: {
-        topic: self.opts.topic
+        topic: self.opts.topic,
+        action: action,
       }
     });
   };

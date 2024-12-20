@@ -55,6 +55,7 @@ sub handle {
   my $theIgnoreError = Foswiki::Func::isTrue($params->{ignoreerror}, 0);
   my $theEditIcon = $params->{editicon} // 'fa-pencil';
   my %typeMapping = ();
+  my $theReload = $params->{reload} // '';
 
   foreach my $item (split(/\s*,\s*/, $params->{typemapping} || '')) {
     if ($item =~ /^(.*)=(.*)$/) {
@@ -65,12 +66,14 @@ sub handle {
   $theExcludeAttr = '\bh\b' unless defined $theExcludeAttr;
 
   # get topic and form
-  my $thisWeb = $theWeb;
+  my $thisWeb = $params->{web} || $theWeb;
   ($thisWeb, $thisTopic) = Foswiki::Func::normalizeWebTopicName($thisWeb, $thisTopic);
   my $topicObj = $this->getTopicObject($thisWeb, $thisTopic, $thisRev);
 
+  my $context = Foswiki::Func::getContext();
   my $theEditable = Foswiki::Func::isTrue($params->{editable}, 0);
   $theEditable = 0 if $theEditable && !$topicObj->haveAccess("change");
+  $theEditable = 0 if $context->{preview} || $context->{save};
 
   my $editIcon = '';
   my $inlineEditorClass = '';
@@ -120,7 +123,7 @@ sub handle {
     elsif ($theType eq 'div') {
       $theFooter = '</div>';
       if ($theEditable) {
-        $theHeader = "<div class='foswikiFormSteps \$inlineEditor' data-topic='\$topic'>";
+        $theHeader = "<div class='foswikiFormSteps \$inlineEditor' \$reload data-topic='\$topic'>";
       } else {
         $theHeader = "<div class='foswikiFormSteps'>";
       }
@@ -130,7 +133,7 @@ sub handle {
     elsif (Foswiki::Func::getContext()->{GridLayoutPluginEnabled} && $theType eq 'grid') {
       $theFooter = '%ENDGRID%</div>';
       if ($theEditable) {
-        $theHeader = '<div class="foswikiPageForm foswikiGridForm $inlineEditor" data-topic="$topic">%BEGINGRID{gutter="1"}%';
+        $theHeader = '<div class="foswikiPageForm foswikiGridForm $inlineEditor" \$reload data-topic="$topic">%BEGINGRID{gutter="1"}%';
       } else {
         $theHeader = '<div class="foswikiPageForm foswikiGridForm">%BEGINGRID{gutter="1"}%';
       }
@@ -193,12 +196,13 @@ sub handle {
     my $fieldDescription = $field->{tooltip} || $field->{description} || '';
     my $fieldTitle = $field->{title};
     my $fieldDefiningTopic = $field->{definingTopic};
+    my $fieldReload = $theReload eq 'on' || $theReload =~ /\b$fieldName\b/ ? "true" : "false";
 
     # get the list of all allowed values
     my $fieldAllowedValues = '';
     # CAUTION: don't use field->getOptions() on a +values field as that won't return the full valueMap...only the value part, but not the title map
     if ($field->can('getOptions') && $field->{type} !~ /\+values/) {
-      my $options = $field->getOptions();
+      my $options = $field->getOptions($thisWeb, $thisTopic);
       if ($options) {
         $fieldAllowedValues = join($theValueSep, @$options);
       }
@@ -213,7 +217,7 @@ sub handle {
     # get the list of all allowed values without any +values mapping applied
     my $fieldOrigAllowedValues = '';
     if ($field->can('getOptions')) {
-      my $options = $field->getOptions();
+      my $options = $field->getOptions($thisWeb, $thisTopic);
       if ($options) {
         $fieldOrigAllowedValues = join($theValueSep, @$options);
       }
@@ -228,7 +232,7 @@ sub handle {
     # get the default value
     my $fieldDefault = '';
     if ($field->can('getDefaultValue')) {
-      $fieldDefault = $field->getDefaultValue() // '';
+      $fieldDefault = $field->getDefaultValue($thisWeb, $thisTopic) // '';
     }
 
     my $metaField = $topicObj->get('FIELD', $fieldName);
@@ -287,8 +291,8 @@ sub handle {
         tooltip => $fieldDescription,
         attributes => $fieldAttrs,
         definingTopic => $fieldDefiningTopic,
-        web => $topicObj->web,
-        topic => $topicObj->topic,
+        web => $thisWeb,
+        topic => $thisTopic,
       );
       $field = $fieldClone;
     }
@@ -320,14 +324,14 @@ sub handle {
     # - use raw value as $origvalue
     my $origValue = $fieldValue;
 
-    $this->translateField($field, $theWeb, $theForm);
+    $this->translateField($field, $thisWeb, $theForm);
 
     # now dive into the core and see what we get out of it
     my $displayValue;
     if ($field->can("getDisplayValue")) {
       $displayValue = $field->getDisplayValue($fieldValue, $thisWeb, $thisTopic);
     } else {
-      $displayValue = $field->renderForDisplay('$value(display)', $fieldValue);
+      $displayValue = $field->renderForDisplay('$value(display)', $fieldValue, undef, $topicObj); # SMELL: topicObj is not supported everywhere
     }
 
     next if $theHideEmpty && (!defined($displayValue) || $displayValue eq '');
@@ -344,6 +348,7 @@ sub handle {
     $line =~ s/\$default\b/$fieldDefault/g;
     $line =~ s/\$value(\(display\))?\b/$displayValue/g;
     $line =~ s/\$origvalue\b/$origValue/g;
+    $line =~ s/\$reload\b/$fieldReload/g;
 
     push @result, $line;
 
@@ -393,7 +398,7 @@ sub getFormat {
       $theFormat = <<'HERE';
 <tr>
         <th class="foswikiTableFirstCol"> $title: </th>
-        <td class="foswikiFormValue inlineEditValue" data-formfield="$name""> 
+        <td class="foswikiFormValue inlineEditValue" data-formfield="$name" data-reload="$reload"> 
 $value <!-- -->
 $editicon
       </td>
@@ -419,7 +424,7 @@ HERE
       $theFormat = <<'HERE';
 <div class='foswikiFormStep'>
 <h3> $title </h3>
-<div class='inlineEditValue' data-formfield='$name'>
+<div class='inlineEditValue' data-formfield='$name' data-reload='$reload'>
 $value <!-- -->
 $editicon
 </div>
@@ -443,7 +448,7 @@ HERE
 %BEGINCOL{"3" class="foswikiGridHeader"}% 
 <h3 >$title:</h3>
 %BEGINCOL{"9"}%
-<div class='inlineEditValue' data-formfield='$name'>
+<div class='inlineEditValue' data-formfield='$name' data-reload='$reload'>
 $value <!-- -->
 $editicon
 </div>
