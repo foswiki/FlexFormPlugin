@@ -1,4 +1,4 @@
-%META:TOPICINFO{author="ProjectContributor" comment="" date="1734690769" format="1.1" version="1"}%
+%META:TOPICINFO{author="ProjectContributor" comment="" date="1739866069" format="1.1" version="1"}%
 ---+!! %TOPIC%
 %FORMFIELD{"Description"}% 
 
@@ -321,6 +321,7 @@ This also illustrates how to edit formfields of different topics in one inline e
 
 ---++ Change History
 %TABLE{columnwidths="7em" tablewidth="100%"}%
+|  18 Feb 2025: | fixed RENDERFORMDEF querying the allowed values of a formfield |
 |  20 Dec 2024: | added support for the upcoming <nop>WebSocketPlugin for realtime notification of topic changes |
 |  15 Dec 2024: | added =web= parameter to RENDERFORDISPLAY and RENDERFOREDIT |
 |  02 Sep 2024: | added =reload= parameter to RENDERFORDISPLAY |
@@ -383,7 +384,7 @@ This also illustrates how to edit formfields of different topics in one inline e
 
 %META:FORM{name="PackageForm"}%
 %META:FIELD{name="Author" title="Author" value="Foswiki:MichaelDaum"}%
-%META:FIELD{name="Copyright" title="Copyright" value="&copy; 2009-2024 Michael Daum"}%
+%META:FIELD{name="Copyright" title="Copyright" value="&copy; 2009-2025 Michael Daum"}%
 %META:FIELD{name="Description" title="Description" value="%25$SHORTDESCRIPTION%25"}%
 %META:FIELD{name="Home" title="Home" value="Foswiki:Extensions/%TOPIC%"}%
 %META:FIELD{name="License" title="License" value="[[http://www.gnu.org/licenses/gpl.html][GPL (Gnu General Public License)]]"}%

@@ -67,7 +67,7 @@ td.inlineEditValue {
 }
 .inlineEditActive .foswikiCheckboxGroup,
 .inlineEditActive .foswikiRadioButtonGroup {
-  max-height:calc(9em * var(--line-height));
+  max-height:calc(10em * var(--line-height));
   overflow-y:auto;
 }
 .inlineEditActive .foswikiCheckboxGroup tr,

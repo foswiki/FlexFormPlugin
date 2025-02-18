@@ -1,6 +1,6 @@
 # Plugin for Foswiki - The Free and Open Source Wiki, http://foswiki.org/
 #
-# Copyright (C) 2009-2024 Michael Daum http://michaeldaumconsulting.com
+# Copyright (C) 2009-2025 Michael Daum http://michaeldaumconsulting.com
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -99,7 +99,14 @@ sub handle {
     my $line = $theFormat;
 
     my $defaultValue = $field->getDefaultValue // "";
-    my $value = $field->{value} // $defaultValue;
+    my $value;
+    if ($field->can('getOptions')) {
+      my $options = $field->getOptions($theWeb, $theTopic);
+      $value = join(", ", @$options) if defined $options;
+    } else {
+      $value = $field->{value};
+    }
+    $value //= $defaultValue;
 
     my $description = $field->{tooltip} // $field->{description} // '';
 

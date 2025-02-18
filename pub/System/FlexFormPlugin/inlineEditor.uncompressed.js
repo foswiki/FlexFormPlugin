@@ -1,7 +1,7 @@
 /*
  * InlineEditor for FlexFormPlugin 
  *
- * Copyright (c) 2022-2024 Michael Daum
+ * Copyright (c) 2022-2025 Michael Daum
  *
  * Licensed under the GPL licenses http://www.gnu.org/licenses/gpl.html
  *
